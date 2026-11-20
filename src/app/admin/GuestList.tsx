@@ -3,15 +3,15 @@
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { manualCheckInAction, undoCheckInAction, updateTicketAction } from '../actions'
-import { headline } from '@/lib/display'
+import { headline, matchTicket, type TicketFilter } from '@/lib/display'
 import type { Ticket } from '@/lib/types'
 
-type Filter = 'all' | 'out' | 'in' | 'noname'
+type Filter = TicketFilter
 const FILTERS: { id: Filter; label: string }[] = [
   { id: 'all', label: 'Everyone' },
   { id: 'out', label: 'Not arrived' },
   { id: 'in', label: 'Arrived' },
-  { id: 'noname', label: 'No name' },
+  { id: 'notgiven', label: 'No name' },
 ]
 const SHOW = 20 // ponytail: render cap; search narrows long lists. Virtualize if events grow past a few thousand tickets.
 
@@ -23,12 +23,7 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
   const [status, setStatus] = useState('')
 
   const q = query.trim().toLowerCase()
-  const matches = tickets.filter((t) => {
-    if (filter === 'in' && !t.checkedInAt) return false
-    if (filter === 'out' && t.checkedInAt) return false
-    if (filter === 'noname' && t.name) return false
-    return !q || t.ticket.includes(q) || t.name.toLowerCase().includes(q) || t.info.toLowerCase().includes(q)
-  })
+  const matches = tickets.filter((t) => matchTicket(t, query, filter))
   const shown = matches.slice(0, SHOW)
 
   return (

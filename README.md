@@ -78,6 +78,10 @@ Moving between Supabase and the Sheet doesn't copy data across. Pick one before 
 3. Under **Site configuration → Environment variables**, add the same values as in `.env.local`.
 4. Deploy, and share the site address and the scanner passcode with your team.
 
+## Handing out tickets
+
+Open **Tickets**, find the ticket number you are handing over, and type the person's name (plus any details). A ticket with a name counts as **given**; clear the name to make it not given again. Press **Enter** to jump to the next ticket's name. Changes save on their own. Names are optional: a ticket with no name still works at the door.
+
 ## Day before the event
 
 - Open the app (this also wakes Supabase if it paused). Make sure the event is **open** on the Events page.
