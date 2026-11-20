@@ -306,7 +306,7 @@ const REJECT_TITLE: Record<string, string> = {
 function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
   if (outcome.result === 'checked_in')
     return (
-      <section className="flex flex-col gap-1.5 rounded-3xl bg-ok p-5.5 text-on-flag">
+      <section className="flex min-h-73 flex-col gap-2 rounded-3xl bg-ok p-5.5 text-on-flag">
         <span className="flex items-center gap-2.5 text-lg font-bold">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10" />
@@ -318,12 +318,14 @@ function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
         {outcome.name && <span className="text-base text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
         {outcome.group && <GroupLine group={outcome.group} />}
         {!outcome.name && outcome.ticket && <AddName event={event} ticket={outcome.ticket} />}
+        {/* Same ending as the red card, so both results are the same size. */}
+        <span className="mt-auto border-t border-white/25 pt-3 text-[15px] leading-relaxed">Ready for the next person.</span>
       </section>
     )
 
   const used = outcome.result === 'already_checked_in'
   return (
-    <section role="alert" className="flex flex-col gap-2 rounded-3xl bg-bad p-5.5 text-on-flag">
+    <section role="alert" className="flex min-h-73 flex-col gap-2 rounded-3xl bg-bad p-5.5 text-on-flag">
       <span className="flex items-center gap-2.5 text-lg font-bold">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10" />
@@ -340,7 +342,7 @@ function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
           : outcome.message}
       </span>
       {outcome.group && <GroupLine group={outcome.group} />}
-      <span className="mt-1.5 border-t border-white/25 pt-3 text-[15px] leading-relaxed">
+      <span className="mt-auto border-t border-white/25 pt-3 text-[15px] leading-relaxed">
         Ask for an ID, or call an admin if this looks wrong.
       </span>
     </section>

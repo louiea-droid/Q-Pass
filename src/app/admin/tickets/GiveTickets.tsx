@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { giveTicketsAction } from '../../actions'
 import { parseTicketList, planGive } from '@/lib/groups'
 
@@ -45,6 +45,9 @@ export default function GiveTickets({
   const [typing, setTyping] = useState('')
   const [error, setError] = useState('')
   const [pending, run] = useTransition()
+  const dialog = useRef<HTMLDialogElement>(null)
+  // A real modal: focus stays inside, Escape closes it, the page behind is inert.
+  useEffect(() => dialog.current?.showModal(), [])
 
   // Chips you've added, plus whatever is still being typed (so you don't have to press Enter on the last one).
   const pendingText = parseTicketList(typing)
@@ -72,8 +75,15 @@ export default function GiveTickets({
   const n = parsed.numbers.length
 
   return (
+    <dialog
+      ref={dialog}
+      aria-labelledby="give-title"
+      onClose={onClose}
+      onClick={(e) => e.target === e.currentTarget && !pending && dialog.current?.close()}
+      className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/50"
+    >
     <form
-      className="flex flex-col gap-4 rounded-xl border-2 border-primary/50 bg-paper p-4"
+      className="flex flex-col gap-4 p-5"
       onSubmit={(e) => {
         e.preventDefault()
         if (!name.trim()) return setError('Type the name of the person receiving the tickets.')
@@ -92,11 +102,11 @@ export default function GiveTickets({
               ? `Gave ticket ${r.given[0]} to ${name.trim()}.`
               : `Gave ${r.given.length} tickets (${list(r.given)}) to ${name.trim()}.`,
           )
-          onClose()
+          dialog.current?.close()
         })
       }}
     >
-      <h2 className="text-base font-extrabold">
+      <h2 id="give-title" className="text-lg font-extrabold">
         Give tickets <span className="text-sm font-medium text-muted">to one person, or a family</span>
       </h2>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -192,12 +202,13 @@ export default function GiveTickets({
         <button
           type="button"
           disabled={pending}
-          onClick={onClose}
+          onClick={() => dialog.current?.close()}
           className="flex h-10 items-center rounded-lg border border-line-strong px-3.5 text-[15px] font-semibold hover:bg-soft"
         >
           Cancel
         </button>
       </div>
     </form>
+    </dialog>
   )
 }

@@ -130,14 +130,12 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
         {readOnly ? (
           <p className="rounded-lg bg-note px-3 py-1.5 text-sm text-note-ink">This event is closed, so tickets are read-only.</p>
         ) : (
-          !giving && (
-            <GiveButton
-              onClick={() => {
-                setGiving(true)
-                setNotice('')
-              }}
-            />
-          )
+          <GiveButton
+            onClick={() => {
+              setGiving(true)
+              setNotice('')
+            }}
+          />
         )}
       </div>
 
