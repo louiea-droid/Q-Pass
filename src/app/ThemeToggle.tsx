@@ -18,12 +18,26 @@ export default function ThemeToggle() {
   return (
     <button
       type="button"
-      onClick={() => {
+      onClick={(e) => {
         const next = isDark() ? 'light' : 'dark'
-        document.documentElement.dataset.theme = next
-        try {
-          localStorage.setItem('theme', next)
-        } catch {}
+        const apply = () => {
+          document.documentElement.dataset.theme = next
+          try {
+            localStorage.setItem('theme', next)
+          } catch {}
+        }
+        // The new mode spreads out in a circle from the switch. Instant where unsupported or motion is reduced.
+        if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return apply()
+        const { x, y, width, height } = e.currentTarget.getBoundingClientRect()
+        const cx = x + width / 2
+        const cy = y + height / 2
+        const r = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy))
+        document.startViewTransition(apply).ready.then(() =>
+          document.documentElement.animate(
+            { clipPath: [`circle(0px at ${cx}px ${cy}px)`, `circle(${r}px at ${cx}px ${cy}px)`] },
+            { duration: 550, easing: 'cubic-bezier(.4,0,.2,1)', pseudoElement: '::view-transition-new(root)' },
+          ),
+        )
       }}
       aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
       title={dark ? 'Light mode' : 'Dark mode'}

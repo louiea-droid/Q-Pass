@@ -65,6 +65,13 @@
 
 :root { color-scheme: light; }
 
+/* Mode change: the switch draws the new page over the old in a growing circle (ThemeToggle.tsx). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 
 body {
   background: var(--paper);
