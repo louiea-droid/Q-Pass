@@ -149,8 +149,8 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
   }, [event])
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
-      <header className="flex items-center gap-2.5 border-b border-line bg-surface px-4 pt-4 pb-3">
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col lg:my-8 lg:min-h-[min(46rem,calc(100dvh-9rem))] lg:rounded-3xl lg:border lg:border-line lg:shadow-[0_24px_60px_-24px_rgb(0_0_0/0.35)]">
+      <header className="flex items-center gap-2.5 border-b border-line bg-surface px-4 pt-4 pb-3 lg:rounded-t-3xl">
         <label className="relative flex h-11 min-w-0 flex-1 items-center rounded-xl border border-line-strong bg-surface">
           <span className="sr-only">Event</span>
           <span className="pointer-events-none absolute left-3.5 size-2 rounded-full bg-gold" aria-hidden="true" />
@@ -170,8 +170,11 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
             <path d="m6 9 6 6 6-6" />
           </svg>
         </label>
-        <ThemeToggle />
-        <details className="relative">
+        {/* On computers an admin has these in the admin header above. */}
+        <span className={`contents ${staff.role === 'admin' ? 'lg:hidden' : ''}`}>
+          <ThemeToggle />
+        </span>
+        <details className={`relative ${staff.role === 'admin' ? 'lg:hidden' : ''}`}>
           <summary
             aria-label={`Signed in as ${staff.name}. Open menu`}
             className="flex size-11 list-none items-center justify-center rounded-full bg-primary text-base font-bold text-primary-ink [&::-webkit-details-marker]:hidden"
@@ -240,7 +243,7 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
 
           <div className="flex-1" />
 
-          <div className="sticky bottom-0 border-t border-line bg-surface p-4">
+          <div className="sticky bottom-0 border-t border-line bg-surface p-4 lg:rounded-b-3xl">
             {typing ? (
               <ManualEntry
                 disabled={busy}
@@ -263,13 +266,13 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
             ) : (
               <KeypadButton onClick={() => setTyping(true)} />
             )}
-            {staff.role === 'admin' && <TabBar className="mt-3 bg-surface" />}
+            {staff.role === 'admin' && <TabBar className="mt-3 bg-surface lg:hidden" />}
           </div>
         </>
       )}
       {/* Admins can always get back to the desk; volunteers only ever see the scanner. */}
       {staff.role === 'admin' && !event && (
-        <div className="sticky bottom-0 mt-auto p-4">
+        <div className="sticky bottom-0 mt-auto p-4 lg:hidden">
           <TabBar />
         </div>
       )}
