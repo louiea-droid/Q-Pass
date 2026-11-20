@@ -2,7 +2,7 @@ import 'server-only'
 import { auth as gauth, sheets as sheetsApi } from '@googleapis/sheets'
 import { decideCheckIn } from './checkin'
 import { isValidEventName, normalizeTicket, parsePayload, ticketRange } from './qr'
-import { parseStaffRows } from './staff'
+import { parseStaffRows, withEnvAdmins } from './staff'
 import type { EventInfo, LogEntry, LogResult, ScanOutcome, Staff, Ticket } from './types'
 
 // The only module that talks to Google Sheets. Swap this file to move to Supabase.
@@ -79,7 +79,7 @@ export async function ensureSchema(): Promise<void> {
 // ponytail: per-instance memory caches; serverless instances don't share them, so correctness never depends on them.
 let staffCache: { at: number; list: Staff[] } | undefined
 export async function getStaffList(): Promise<Staff[]> {
-  if (!staffCache || Date.now() - staffCache.at > 60_000) staffCache = { at: Date.now(), list: parseStaffRows(await read('Staff!A:D')) }
+  if (!staffCache || Date.now() - staffCache.at > 60_000) staffCache = { at: Date.now(), list: withEnvAdmins(parseStaffRows(await read('Staff!A:D')), process.env.ADMIN_EMAILS) }
   return staffCache.list
 }
 
@@ -187,6 +187,7 @@ export async function undoCheckIn(event: string, ticket: string, staff: Staff): 
 export async function getDashboard(event: string): Promise<{
   total: number
   named: number
+  namedCheckedIn: number
   checkedIn: number
   perStaff: { name: string; count: number }[]
   recent: LogEntry[]
@@ -207,6 +208,7 @@ export async function getDashboard(event: string): Promise<{
   return {
     total: tickets.length,
     named: tickets.filter((t) => t.name).length,
+    namedCheckedIn: tickets.filter((t) => t.name && t.checkedInAt).length,
     checkedIn: tickets.filter((t) => t.checkedInAt).length,
     perStaff: [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
     recent,

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { findStaff, parseStaffRows } from './staff'
+import { findStaff, parseStaffRows, withEnvAdmins } from './staff'
 
 const rows = [
   ['Email', 'Name', 'Role', 'Active'],
@@ -23,4 +23,12 @@ test('email match ignores case and surrounding spaces', () => {
   expect(findStaff(list, 'maria@church.org')?.name).toBe('Maria')
   expect(findStaff(list, ' ANA@church.org')?.name).toBe('Ana')
   expect(findStaff(list, 'off@church.org')).toBeUndefined()
+})
+
+test('ADMIN_EMAILS are admins even when missing from or lower-ranked in the Staff tab', () => {
+  const list = withEnvAdmins(parseStaffRows(rows), ' Boss@Gmail.com , ana@church.org,')
+  expect(findStaff(list, 'boss@gmail.com')?.role).toBe('admin')
+  expect(findStaff(list, 'ana@church.org')).toEqual({ email: 'ana@church.org', name: 'Ana', role: 'admin' })
+  expect(findStaff(list, 'maria@church.org')?.role).toBe('admin')
+  expect(withEnvAdmins([], undefined)).toEqual([])
 })
