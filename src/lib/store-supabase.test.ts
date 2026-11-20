@@ -109,3 +109,15 @@ test('a wrong key surfaces a clear error', async () => {
   const { listEvents } = await import('./store-supabase')
   await expect(listEvents()).rejects.toThrow('Invalid API key')
 })
+
+test('new sb_secret_ keys go only in the apikey header; legacy JWT keys also as Bearer', async () => {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_abc'
+  let { listEvents } = await import('./store-supabase')
+  await listEvents().catch(() => {})
+  expect(reqs.at(-1)!.headers.Authorization).toBeUndefined()
+  vi.resetModules()
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-key'
+  ;({ listEvents } = await import('./store-supabase'))
+  await listEvents()
+  expect(reqs.at(-1)!.headers.Authorization).toBe('Bearer service-key')
+})

@@ -13,7 +13,13 @@ async function sb<T>(path: string, init: { method?: string; body?: unknown; head
   if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set')
   const res = await fetch(`${url}/rest/v1/${path}`, {
     method: init.method ?? 'GET',
-    headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', ...init.headers },
+    headers: {
+      apikey: key,
+      // Legacy service_role keys are JWTs and also go in Authorization; new sb_secret_ keys must not.
+      ...(!key.startsWith('sb_') && { Authorization: `Bearer ${key}` }),
+      'Content-Type': 'application/json',
+      ...init.headers,
+    },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
     cache: 'no-store',
   })
