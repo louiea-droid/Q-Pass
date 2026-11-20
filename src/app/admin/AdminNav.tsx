@@ -19,7 +19,7 @@ export default function AdminNav() {
           key={n.href}
           href={n.href}
           aria-current={current(n.href) ? 'page' : undefined}
-          className={`rounded-xl px-3.5 py-2.5 font-semibold transition-colors duration-200 ${
+          className={`rounded-lg px-3 py-2 text-[15px] font-semibold transition-colors duration-200 ${
             current(n.href) ? 'bg-soft text-primary' : 'text-muted hover:bg-soft hover:text-ink'
           }`}
         >

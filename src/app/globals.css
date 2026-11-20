@@ -14,6 +14,7 @@
   --soft: #eceef8;
   --gold: #e2b33c;
   --ok: #146c3a;
+  --ok-text: #146c3a;
   --bad: #b42318;
   --on-flag: #ffffff;
   --note: #fff7e0;
@@ -32,6 +33,7 @@
     --primary-hover: #b6befa;
     --primary-ink: #10122a;
     --soft: #23284a;
+    --ok-text: #6ee7a0;
     --note: #2e2611;
     --note-ink: #f3dfa6;
   }
@@ -50,12 +52,15 @@
   --color-soft: var(--soft);
   --color-gold: var(--gold);
   --color-ok: var(--ok);
+  --color-ok-text: var(--ok-text);
   --color-bad: var(--bad);
   --color-on-flag: var(--on-flag);
   --color-note: var(--note);
   --color-note-ink: var(--note-ink);
   --font-sans: var(--font-jakarta);
 }
+
+:root { color-scheme: light dark; }
 
 body {
   background: var(--paper);

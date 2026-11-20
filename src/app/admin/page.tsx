@@ -29,8 +29,8 @@ export default async function CheckInDesk({ searchParams }: PageProps<'/admin'>)
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-3xl font-extrabold wrap-anywhere">{event.name}</h1>
-          <p className="text-[15px] text-muted">
+          <h1 className="text-2xl font-extrabold wrap-anywhere">{event.name}</h1>
+          <p className="text-sm text-muted">
             {[event.venue, event.status === 'open' ? 'open for scanning' : 'closed, so changes are off'].filter(Boolean).join(', ')}
           </p>
         </div>
@@ -38,7 +38,7 @@ export default async function CheckInDesk({ searchParams }: PageProps<'/admin'>)
           <EventPicker events={events.map((e) => e.name)} value={event.name} />
           <a
             href={`/api/export?event=${encodeURIComponent(event.name)}`}
-            className="flex h-11 items-center gap-2 rounded-xl border border-line-strong bg-surface px-4 font-semibold transition-colors duration-200 hover:bg-soft"
+            className="flex h-10 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:bg-soft"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />

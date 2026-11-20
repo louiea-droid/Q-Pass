@@ -32,13 +32,13 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
   const shown = matches.slice(0, SHOW)
 
   return (
-    <section aria-labelledby="find" className="flex min-w-0 flex-[999_1_560px] flex-col gap-4 rounded-3xl border border-line bg-surface p-6">
-      <h2 id="find" className="text-xl font-extrabold">
+    <section aria-labelledby="find" className="flex min-w-0 flex-[999_1_560px] flex-col gap-3 rounded-2xl border border-line bg-surface p-5">
+      <h2 id="find" className="text-lg font-extrabold">
         Find a guest
       </h2>
       <label className="relative block">
         <span className="sr-only">Search by name or ticket number</span>
-        <svg className="pointer-events-none absolute top-4.5 left-4 text-muted" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg className="pointer-events-none absolute top-3 left-3.5 text-muted" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
         </svg>
@@ -47,7 +47,7 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Name or ticket number"
-          className="h-14 w-full rounded-xl border-2 border-line-strong bg-surface pr-4 pl-12 text-[17px] font-medium focus:border-primary focus:outline-none"
+          className="h-11 w-full rounded-lg border-[1.5px] border-line-strong bg-surface pr-3 pl-10 text-[15px] font-medium focus:border-primary focus:outline-none"
         />
       </label>
       <fieldset className="flex flex-wrap gap-2">
@@ -55,7 +55,7 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
         {FILTERS.map((f) => (
           <label
             key={f.id}
-            className={`flex h-9 items-center rounded-full border px-3.5 text-sm font-semibold transition-colors duration-200 has-focus-visible:outline-3 has-focus-visible:outline-gold ${
+            className={`flex h-8 items-center rounded-full border px-3 text-[13px] font-semibold transition-colors duration-200 has-focus-visible:outline-3 has-focus-visible:outline-gold ${
               filter === f.id ? 'border-primary bg-primary text-primary-ink' : 'border-line-strong bg-surface hover:bg-soft'
             }`}
           >
@@ -79,7 +79,7 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
           </button>
         </p>
       ) : (
-        <ul className="flex flex-col gap-2.5">
+        <ul className="flex flex-col gap-2">
           {shown.map((t) => (
             <Guest key={t.ticket} event={event} t={t} readOnly={readOnly} onStatus={setStatus} />
           ))}
@@ -118,12 +118,12 @@ function Guest({ event, t, readOnly, onStatus }: { event: string; t: Ticket; rea
       }
     })
 
-  const btn = 'h-11 rounded-xl px-4 text-[15px] font-semibold transition-colors duration-200 disabled:opacity-60'
+  const btn = 'h-9 rounded-lg px-3.5 text-sm font-semibold transition-colors duration-200 disabled:opacity-60'
 
   if (editing)
     return (
-      <li className="flex flex-col gap-3 rounded-2xl border-2 border-primary p-4">
-        <span className="text-lg font-extrabold tabular-nums">Ticket {t.ticket}</span>
+      <li className="flex flex-col gap-3 rounded-xl border-2 border-primary p-4">
+        <span className="text-[15px] font-extrabold tabular-nums">Ticket {t.ticket}</span>
         <div className="grid gap-3 sm:grid-cols-3">
           {(['name', 'info', 'notes'] as const).map((k) => (
             <label key={k} className="flex flex-col gap-1.5 text-sm font-bold capitalize">
@@ -133,7 +133,7 @@ function Guest({ event, t, readOnly, onStatus }: { event: string; t: Ticket; rea
                 autoComplete="off"
                 autoFocus={k === 'name'}
                 onChange={(e) => setDraft({ ...draft, [k]: e.target.value })}
-                className="h-11 rounded-xl border-[1.5px] border-line-strong bg-surface px-3 text-base font-medium focus:border-primary focus:outline-none"
+                className="h-10 rounded-lg border border-line-strong bg-surface px-3 text-[15px] font-medium focus:border-primary focus:outline-none"
               />
             </label>
           ))}
@@ -159,13 +159,13 @@ function Guest({ event, t, readOnly, onStatus }: { event: string; t: Ticket; rea
     )
 
   return (
-    <li className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-line p-4">
+    <li className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line px-4 py-2.5">
       <span className="flex min-w-0 flex-[1_1_220px] flex-col gap-0.5">
-        <span className="text-[17px] font-bold wrap-anywhere">
+        <span className="text-[15px] font-bold wrap-anywhere">
           {label}
-          {t.name && <span className="ml-2 text-sm font-semibold text-muted tabular-nums">{t.ticket}</span>}
+          {t.name && <span className="ml-2 text-xs font-semibold text-muted tabular-nums">{t.ticket}</span>}
         </span>
-        <span className={`text-sm ${t.checkedInAt ? 'font-semibold text-ok' : 'text-muted'}`}>
+        <span className={`text-[13px] ${t.checkedInAt ? 'font-semibold text-ok-text' : 'text-muted'}`}>
           {t.checkedInAt
             ? `Arrived ${fmt(t.checkedInAt)}, checked in by ${t.checkedInBy || 'someone'}${t.method === 'manual' ? ' (by hand)' : ''}`
             : `Not arrived yet${t.info ? `. ${t.info}` : ''}`}
@@ -205,7 +205,7 @@ function Guest({ event, t, readOnly, onStatus }: { event: string; t: Ticket; rea
               disabled={pending}
               onClick={() => act(() => manualCheckInAction(event, t.ticket), `Checked in ${label}.`)}
               aria-label={`Check in ${label}`}
-              className={`${btn} bg-primary px-5 font-bold text-primary-ink hover:bg-primary-hover`}
+              className={`${btn} bg-primary px-4 font-bold text-primary-ink hover:bg-primary-hover`}
             >
               {pending ? 'Checking in…' : 'Check in'}
             </button>

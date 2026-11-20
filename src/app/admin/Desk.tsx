@@ -74,29 +74,29 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
   return (
     <>
       {readOnly && (
-        <p className="rounded-2xl bg-note p-4 text-note-ink">
+        <p className="rounded-xl bg-note p-3 text-sm text-note-ink">
           This event is closed, so the list is read-only. Reopen it on Events and QR codes to make changes.
         </p>
       )}
       <Arrivals stats={stats} error={error} />
-      <div className="flex flex-wrap items-start gap-6">
+      <div className="flex flex-wrap items-start gap-5">
         <GuestList event={event} tickets={tickets} readOnly={readOnly} />
-        <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-6">
-          <section aria-labelledby="live" className="flex flex-col gap-3 rounded-3xl border border-line bg-surface p-6">
-            <h2 id="live" className="text-xl font-extrabold">
+        <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-5">
+          <section aria-labelledby="live" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-5">
+            <h2 id="live" className="text-lg font-extrabold">
               At the door now
             </h2>
             {!stats ? (
-              <p className="text-muted">Loading…</p>
+              <p className="text-sm text-muted">Loading…</p>
             ) : stats.recent.length === 0 ? (
-              <p className="text-muted">Scans will appear here as soon as the door opens.</p>
+              <p className="text-sm text-muted">Scans will appear here as soon as the door opens.</p>
             ) : (
               <ol className="flex flex-col">
                 {stats.recent.slice(0, 12).map((r, i) => {
                   const ok = r.result === 'checked_in'
                   const label = r.ticket ? headline({ ticket: r.ticket, name: names.get(r.ticket) }) : 'Unreadable code'
                   return (
-                    <li key={`${r.time}-${i}`} className="flex items-center gap-2.5 border-b border-line py-2.5 last:border-0">
+                    <li key={`${r.time}-${i}`} className="flex items-center gap-2.5 border-b border-line py-2 last:border-0">
                       <span className={`size-2.5 shrink-0 rounded-full ${ok ? 'bg-ok' : r.result === 'undone' ? 'bg-line-strong' : 'bg-bad'}`} aria-hidden="true" />
                       <span className="flex min-w-0 flex-1 flex-col text-[15px]">
                         <strong className="truncate">{label}</strong>
@@ -116,14 +116,14 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
             )}
           </section>
 
-          <section aria-labelledby="team" className="flex flex-col gap-3 rounded-3xl border border-line bg-surface p-6">
-            <h2 id="team" className="text-xl font-extrabold">
+          <section aria-labelledby="team" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-5">
+            <h2 id="team" className="text-lg font-extrabold">
               Check-ins by person
             </h2>
             {!stats ? (
-              <p className="text-muted">Loading…</p>
+              <p className="text-sm text-muted">Loading…</p>
             ) : stats.perStaff.length === 0 ? (
-              <p className="text-muted">Nobody has checked anyone in yet.</p>
+              <p className="text-sm text-muted">Nobody has checked anyone in yet.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {stats.perStaff.map((s) => (
@@ -144,7 +144,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
 function Arrivals({ stats, error }: { stats: Stats | null; error: string }) {
   if (!stats)
     return (
-      <section className="rounded-3xl border border-line bg-surface p-6" aria-busy="true">
+      <section className="rounded-2xl border border-line bg-surface p-5" aria-busy="true">
         <p className={error ? 'text-bad' : 'text-muted'} role={error ? 'alert' : 'status'}>
           {error ? `Couldn’t load arrivals: ${error}. Retrying every 10 seconds.` : 'Loading arrivals…'}
         </p>
@@ -156,15 +156,15 @@ function Arrivals({ stats, error }: { stats: Stats | null; error: string }) {
   const walkIns = stats.checkedIn - stats.namedCheckedIn
   const pct = expected ? Math.round((arrived / expected) * 100) : 0
   return (
-    <section aria-label="Arrivals" className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-6">
-      <p className="text-xl text-muted">
-        <strong className="text-5xl font-extrabold text-ink tabular-nums">{arrived}</strong> of {expected}{' '}
+    <section aria-label="Arrivals" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-5">
+      <p className="text-base text-muted">
+        <strong className="text-4xl font-extrabold text-ink tabular-nums">{arrived.toLocaleString('en')}</strong> of {expected.toLocaleString('en')}{' '}
         {stats.named ? 'expected guests have arrived' : 'tickets checked in'}
       </p>
-      <div role="progressbar" aria-label="Arrived" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} className="h-3.5 overflow-hidden rounded-full bg-soft">
+      <div role="progressbar" aria-label="Arrived" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} className="h-2.5 overflow-hidden rounded-full bg-soft">
         <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${pct}%` }} />
       </div>
-      <div className="flex flex-wrap gap-x-10 gap-y-2 text-[15px] text-muted">
+      <div className="flex flex-wrap gap-x-8 gap-y-1 text-sm text-muted">
         {stats.named > 0 && (
           <span>
             <strong className="text-ink">{stats.named - stats.namedCheckedIn}</strong> still to arrive

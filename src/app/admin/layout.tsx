@@ -8,7 +8,7 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   return (
     <>
       <header className="no-print border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3.5">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3">
           <span className="flex items-center gap-2.5 text-lg font-extrabold text-primary">
             <Logo size={32} />
             Q-Pass
@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
           </form>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pt-7 pb-12">{children}</main>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-6 pt-6 pb-12">{children}</main>
     </>
   )
 }
