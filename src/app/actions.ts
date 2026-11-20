@@ -2,7 +2,7 @@
 
 import { requireStaff } from '@/lib/guard'
 import { normalizeTicket } from '@/lib/qr'
-import { checkIn, listTickets, updateTicket } from '@/lib/store'
+import { checkIn, getEvent, listTickets, undoCheckIn, updateTicket } from '@/lib/store'
 import type { ScanOutcome } from '@/lib/types'
 
 export async function scanAction(event: string, payload: string): Promise<ScanOutcome> {
@@ -26,4 +26,51 @@ export async function setNameAction(event: string, ticket: string, name: string)
     if (t.name) throw new Error('This ticket already has a name')
   }
   await updateTicket(event, ticket, { name: name.trim() })
+}
+
+export type ActionResult = { error?: string }
+
+/** Production hides thrown server-action messages, so return them for the UI to show. */
+async function attempt(fn: () => Promise<void>): Promise<ActionResult> {
+  try {
+    await fn()
+    return {}
+  } catch (e) {
+    return { error: (e as Error).message || 'Something went wrong. Try again.' }
+  }
+}
+
+async function requireOpenEvent(event: string) {
+  const e = await getEvent(event)
+  if (!e) throw new Error('Event not found')
+  if (e.status === 'closed') throw new Error('This event is closed. Reopen it on the Events page to make changes.')
+}
+
+export async function updateTicketAction(
+  event: string,
+  ticket: string,
+  patch: { name?: string; info?: string; notes?: string },
+): Promise<ActionResult> {
+  await requireStaff('admin')
+  return attempt(async () => {
+    await requireOpenEvent(event)
+    await updateTicket(event, ticket, {
+      ...(patch.name !== undefined && { name: patch.name.trim() }),
+      ...(patch.info !== undefined && { info: patch.info.trim() }),
+      ...(patch.notes !== undefined && { notes: patch.notes.trim() }),
+    })
+  })
+}
+
+export async function manualCheckInAction(event: string, ticket: string): Promise<ScanOutcome> {
+  const staff = await requireStaff('admin')
+  return checkIn({ payload: null, event, ticket, staff, method: 'manual' })
+}
+
+export async function undoCheckInAction(event: string, ticket: string): Promise<ActionResult> {
+  const staff = await requireStaff('admin')
+  return attempt(async () => {
+    await requireOpenEvent(event)
+    await undoCheckIn(event, ticket, staff)
+  })
 }

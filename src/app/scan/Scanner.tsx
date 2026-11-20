@@ -157,7 +157,7 @@ function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
     <div className={`rounded-xl p-5 text-on-flag ${ok ? 'bg-ok' : 'bg-bad'}`}>
       <p className="text-sm font-semibold opacity-90">{ok ? 'Checked in' : 'Not checked in'}</p>
       {outcome.ticket && <p className="font-serif text-5xl font-bold tabular-nums">{outcome.ticket}</p>}
-      <p className="mt-1 text-2xl font-semibold [overflow-wrap:anywhere]">
+      <p className="mt-1 text-2xl font-semibold wrap-anywhere">
         {outcome.result === 'already_checked_in' ? outcome.name || 'No name' : outcome.message}
       </p>
       {outcome.result === 'already_checked_in' && (
