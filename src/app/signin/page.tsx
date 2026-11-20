@@ -1,6 +1,7 @@
 import { ensureSchema } from '@/lib/store'
 import Logo from '../Logo'
 import SignInForm from './SignInForm'
+import ThemeToggle from '../ThemeToggle'
 
 export const metadata = { title: 'Sign in · Q-Pass' }
 
@@ -13,7 +14,10 @@ export default async function SignIn() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-7 px-6 pt-16 pb-8">
       <div className="flex flex-col gap-3.5">
-        <Logo />
+        <div className="flex items-center justify-between">
+          <Logo />
+          <ThemeToggle />
+        </div>
         <h1 className="text-3xl font-extrabold">Welcome</h1>
         <p className="text-[17px] leading-relaxed text-muted">Type your name and the passcode from your team leader.</p>
       </div>

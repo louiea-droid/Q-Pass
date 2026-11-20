@@ -65,20 +65,6 @@
 
 :root { color-scheme: light; }
 
-/* Theme switch: sun and moon swap with a spin (adapted from Uiverse.io by Creatlydev). */
-.theme-toggle {
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-}
-.theme-toggle > svg {
-  grid-area: 1 / 1;
-  transition: transform 500ms;
-}
-.theme-toggle .icon--moon { transition-delay: 200ms; }
-.theme-toggle .icon--sun { transform: scale(0); }
-:root[data-theme="dark"] .theme-toggle .icon--moon { transition-delay: 0ms; transform: rotate(360deg) scale(0); }
-:root[data-theme="dark"] .theme-toggle .icon--sun { transition-delay: 200ms; transform: scale(1) rotate(360deg); }
 
 body {
   background: var(--paper);
