@@ -14,7 +14,7 @@ export default async function CheckInDesk({ searchParams }: PageProps<'/admin'>)
     return (
       <section className="flex max-w-xl flex-col gap-3 pt-6">
         <h1 className="text-3xl font-extrabold">Welcome! Let’s set up your first event</h1>
-        <p className="text-[17px] text-muted">Create the event to get its ticket list and printable QR codes.</p>
+        <p className="text-[17px] text-muted">Create the event to get its ticket list and QR codes.</p>
         <Link
           href="/admin/events"
           className="mt-2 flex h-12 w-fit items-center rounded-2xl bg-primary px-5 font-bold text-primary-ink hover:bg-primary-hover"

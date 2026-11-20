@@ -5,7 +5,7 @@ import { EditEvent, NewEvent } from './EventForm'
 
 export const metadata = { title: 'Events · Q-Pass' }
 
-const STEPS = ['Create the event', 'Print the QR codes', 'Scan them at the door']
+const STEPS = ['Create the event', 'Download the QR codes', 'Scan them at the door']
 
 const fmtDate = (d: string) =>
   d ? new Date(`${d}T00:00`).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : ''
@@ -19,7 +19,7 @@ export default async function EventsPage() {
       <section className="mx-auto flex w-full max-w-xl flex-col gap-4 pt-2">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-extrabold">Create your first event</h1>
-          <p className="text-[15px] text-muted">It takes a minute. Then you can print the QR codes for the tickets.</p>
+          <p className="text-[15px] text-muted">It takes a minute. Then you can download the QR codes for the tickets.</p>
         </div>
         <ol className="grid gap-2 sm:grid-cols-3">
           {STEPS.map((s, i) => (
@@ -84,14 +84,13 @@ export default async function EventsPage() {
                   Open desk
                 </Link>
                 <Link
-                  href={`/admin/events/${encodeURIComponent(e.name)}/qr`}
+                  href={`/admin/qr?event=${encodeURIComponent(e.name)}`}
                   className="flex h-10 items-center gap-2 rounded-lg border border-line-strong px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:bg-soft"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                    <rect x="6" y="14" width="12" height="8" rx="1" />
+                    <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
                   </svg>
-                  Print QR codes
+                  QR codes
                 </Link>
               </div>
               <EditEvent event={e} />

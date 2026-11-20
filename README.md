@@ -1,6 +1,6 @@
 # Q-Pass
 
-Staff scan the QR code on each paper ticket with their phone, and the check-in is saved straight away. Admins watch arrivals live, fix names, check people in by hand, download the list as a spreadsheet, and print QR codes for new events.
+Staff scan the QR code on each paper ticket with their phone, and the check-in is saved straight away. Admins watch arrivals live, fix names, check people in by hand, download the list as a spreadsheet, and download QR codes for new events.
 
 Everything runs on free plans. You don't need a card.
 
@@ -18,7 +18,7 @@ Either way, two phones scanning the same ticket at the same moment is safe: only
 There are two passcodes, set by you, and they must be different:
 
 - the **scanner passcode** opens the scanner only;
-- the **admin passcode** opens everything (dashboard, people, events, QR printing, and the scanner).
+- the **admin passcode** opens everything (dashboard, people, events, QR codes, and the scanner).
 
 Staff also type their name, and that name is recorded with every check-in they make. Sign-ins last 12 hours. If a passcode leaks, change that passcode **and** `AUTH_SECRET` in the settings, then restart or redeploy. That signs everyone out.
 
@@ -54,7 +54,7 @@ npm run dev
 Open <http://localhost:3000>, sign in with your name and the admin passcode, then:
 
 1. Go to **Events** and create the event.
-2. Click **Print QR codes**, print a few, and test-scan them.
+2. Click **QR codes**, then **Download all** (one zip file of PNG images, each named by its ticket number with the number printed under the code). Print a few and test-scan them.
 
 Phone cameras only work on `https://` sites, so test scanning on a phone after putting it online (or use your laptop's webcam on localhost).
 

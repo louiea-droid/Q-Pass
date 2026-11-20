@@ -33,10 +33,10 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
     return (
       <div role="status" className="flex flex-wrap items-center gap-3 rounded-2xl border border-ok/40 bg-ok/10 p-4">
         <p className="min-w-0 flex-1 font-semibold">
-          Created <strong>{created}</strong>. Next, print its QR codes.
+          Created <strong>{created}</strong>. Next, download its QR codes.
         </p>
-        <Link href={`/admin/events/${encodeURIComponent(created)}/qr`} className={primary}>
-          Print QR codes
+        <Link href={`/admin/qr?event=${encodeURIComponent(created)}`} className={primary}>
+          QR codes
         </Link>
         <button onClick={() => setCreated('')} className={secondary}>
           Done
