@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react'
 import { manualCheckInAction, undoCheckInAction, updateTicketAction } from '../actions'
 import { headline, matchTicket, type TicketFilter } from '@/lib/display'
 import type { Ticket } from '@/lib/types'
+import Pager from './Pager'
 
 type Filter = TicketFilter
 const FILTERS: { id: Filter; label: string }[] = [
@@ -13,18 +14,20 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'in', label: 'Arrived' },
   { id: 'notgiven', label: 'No name' },
 ]
-const SHOW = 20 // ponytail: render cap; search narrows long lists. Virtualize if events grow past a few thousand tickets.
-
 const fmt = (iso: string) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '')
 
 export default function GuestList({ event, tickets, readOnly }: { event: string; tickets: Ticket[]; readOnly: boolean }) {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [status, setStatus] = useState('')
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(10)
 
   const q = query.trim().toLowerCase()
   const matches = tickets.filter((t) => matchTicket(t, query, filter))
-  const shown = matches.slice(0, SHOW)
+  // The list refreshes as people arrive; stay on a page that still exists.
+  const current = Math.min(page, Math.max(0, Math.ceil(matches.length / size) - 1))
+  const shown = matches.slice(current * size, current * size + size)
 
   return (
     <section aria-labelledby="find" className="flex min-w-0 flex-[999_1_560px] flex-col gap-3 rounded-2xl border border-line bg-surface p-5">
@@ -40,7 +43,10 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
         <input
           type="search"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setPage(0)
+          }}
           placeholder="Name or ticket number"
           className="h-11 w-full rounded-lg border-[1.5px] border-line-strong bg-surface pr-3 pl-10 text-[15px] font-medium focus:border-primary focus:outline-none"
         />
@@ -54,7 +60,13 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
               filter === f.id ? 'border-primary bg-primary text-primary-ink' : 'border-line-strong bg-surface hover:bg-soft'
             }`}
           >
-            <input type="radio" name="filter" value={f.id} checked={filter === f.id} onChange={() => setFilter(f.id)} className="sr-only" />
+            <input type="radio" name="filter" value={f.id} checked={filter === f.id}
+              onChange={() => {
+                setFilter(f.id)
+                setPage(0)
+              }}
+              className="sr-only"
+            />
             {f.label}
           </label>
         ))}
@@ -80,12 +92,23 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
           ))}
         </ul>
       )}
-      <p role="status" className="text-sm text-muted">
-        {status ||
-          (matches.length > SHOW
-            ? `Showing the first ${SHOW} of ${matches.length}. Type a name or number to narrow it down.`
-            : `${matches.length} ${matches.length === 1 ? 'guest' : 'guests'}${q ? ` match “${query}”` : ''}.`)}
-      </p>
+      {status && (
+        <p role="status" className="text-sm font-semibold text-ok-text">
+          {status}
+        </p>
+      )}
+      {matches.length > 0 && (
+        <Pager
+          page={current}
+          size={size}
+          total={matches.length}
+          onPage={setPage}
+          onSize={(s) => {
+            setSize(s)
+            setPage(0)
+          }}
+        />
+      )}
     </section>
   )
 }
@@ -155,10 +178,13 @@ function Guest({ event, t, readOnly, onStatus }: { event: string; t: Ticket; rea
 
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line px-4 py-2.5">
-      <span className="flex min-w-0 flex-[1_1_220px] flex-col gap-0.5">
-        <span className="text-[15px] font-bold wrap-anywhere">
-          {label}
-          {t.name && <span className="ml-2 text-xs font-semibold text-muted tabular-nums">{t.ticket}</span>}
+      {/* The ticket number is what volunteers match against the paper ticket, so it leads, big. */}
+      <span className="w-16 shrink-0 text-xl font-extrabold tabular-nums" aria-label={`Ticket ${t.ticket}`}>
+        {t.ticket}
+      </span>
+      <span className="flex min-w-0 flex-[1_1_180px] flex-col gap-0.5">
+        <span className={`text-[15px] wrap-anywhere ${t.name ? 'font-bold' : 'font-medium text-muted'}`}>
+          {t.name || 'No name yet'}
         </span>
         <span className={`text-[13px] ${t.checkedInAt ? 'font-semibold text-ok-text' : 'text-muted'}`}>
           {t.checkedInAt
