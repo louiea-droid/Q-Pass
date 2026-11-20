@@ -2,8 +2,8 @@
 
 import { requireStaff } from '@/lib/guard'
 import { normalizeTicket } from '@/lib/qr'
-import { checkIn, getEvent, listTickets, undoCheckIn, updateTicket } from '@/lib/store'
-import type { ScanOutcome } from '@/lib/types'
+import { checkIn, createEvent, getEvent, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
+import type { EventInfo, ScanOutcome } from '@/lib/types'
 
 export async function scanAction(event: string, payload: string): Promise<ScanOutcome> {
   const staff = await requireStaff('scanner')
@@ -73,4 +73,15 @@ export async function undoCheckInAction(event: string, ticket: string): Promise<
     await requireOpenEvent(event)
     await undoCheckIn(event, ticket, staff)
   })
+}
+
+export async function createEventAction(e: EventInfo): Promise<ActionResult> {
+  await requireStaff('admin')
+  return attempt(() => createEvent({ ...e, name: e.name.trim(), status: 'open' }))
+}
+
+export async function updateEventAction(name: string, patch: Partial<Omit<EventInfo, 'name'>>): Promise<ActionResult> {
+  await requireStaff('admin')
+  const { date, venue, details, status } = patch // range and name are locked after creation
+  return attempt(() => updateEvent(name, { date, venue, details, status }))
 }

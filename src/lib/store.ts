@@ -118,8 +118,10 @@ export async function updateEvent(name: string, patch: Partial<Omit<EventInfo, '
   const rows = await read('Events!A2:A')
   const i = rows.findIndex((r) => r[0] === name)
   if (i < 0) throw new Error('Event not found')
+  eventsCache = undefined // read the latest values, not a cached copy, before merging
   const cur = await getEvent(name)
-  const e = { ...cur!, ...patch }
+  const set = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined))
+  const e = { ...cur!, ...set }
   // Name (A) and ticket range (E:F) never change after creation.
   await write(`Events!B${i + 2}:D${i + 2}`, [[e.date, e.venue, e.details]])
   await write(`Events!G${i + 2}`, [[e.status]])
