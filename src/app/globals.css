@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
+/* Evergreen + harvest wheat. Scan results are the only loud color on screen. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --paper: #f6f7f3;
+  --surface: #ffffff;
+  --ink: #17211b;
+  --muted: #5e6b63;
+  --line: #d9ded8;
+  --pine: #1f4a36;
+  --pine-ink: #ffffff;
+  --wheat: #a8771b;
+  --ok: #1e7a46;
+  --bad: #b42318;
+  --on-flag: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --paper: #0f1612;
+    --surface: #16201a;
+    --ink: #e7ece8;
+    --muted: #9aa79f;
+    --line: #2a362f;
+    --pine: #7fc4a0;
+    --pine-ink: #0f1612;
+    --wheat: #e0b357;
+    --ok: #17663a;
+    --bad: #9c1f15;
   }
 }
 
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-pine: var(--pine);
+  --color-pine-ink: var(--pine-ink);
+  --color-wheat: var(--wheat);
+  --color-ok: var(--ok);
+  --color-bad: var(--bad);
+  --color-on-flag: var(--on-flag);
+  --font-sans: var(--font-figtree);
+  --font-serif: var(--font-literata);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--wheat);
+  outline-offset: 2px;
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
 }
