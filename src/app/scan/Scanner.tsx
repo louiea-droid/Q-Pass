@@ -8,6 +8,7 @@ import { signOutAction } from '../signin/actions'
 import { headline } from '@/lib/display'
 import type { ScanOutcome, Staff } from '@/lib/types'
 import ThemeToggle from '../ThemeToggle'
+import { TabBar } from '../admin/AdminNav'
 
 const EVENT_KEY = 'tac-scan-event'
 const COOLDOWN_MS = 2000
@@ -262,8 +263,15 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
             ) : (
               <KeypadButton onClick={() => setTyping(true)} />
             )}
+            {staff.role === 'admin' && <TabBar className="mt-3 bg-surface" />}
           </div>
         </>
+      )}
+      {/* Admins can always get back to the desk; volunteers only ever see the scanner. */}
+      {staff.role === 'admin' && !event && (
+        <div className="sticky bottom-0 mt-auto p-4">
+          <TabBar />
+        </div>
       )}
     </div>
   )

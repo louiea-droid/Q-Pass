@@ -42,7 +42,7 @@ const NAV = [
   },
 ]
 
-/** Desktop: a row of links in the header. Phones and tablets: a floating tab bar at the bottom of the screen. */
+/** Desktop: a row of links in the header. Phones and tablets: the floating TabBar at the bottom of the screen. */
 export default function AdminNav() {
   const path = usePathname()
   const current = (href: string) => (href === '/admin' ? path === '/admin' : path.startsWith(href))
@@ -63,27 +63,33 @@ export default function AdminNav() {
         ))}
       </nav>
 
-      <nav
-        aria-label="Admin"
-        className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto grid max-w-lg grid-cols-5 gap-1 rounded-2xl border border-line-strong bg-surface/90 p-1.5 shadow-[0_10px_30px_-8px_rgb(0_0_0/0.35)] backdrop-blur-md lg:hidden"
-      >
-        {NAV.map((n) => {
-          const on = current(n.href)
-          return (
-            <Link
-              key={n.href}
-              href={n.href}
-              aria-current={on ? 'page' : undefined}
-              className={`flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-bold transition-colors duration-200 ${
-                on ? 'bg-primary text-primary-ink' : 'text-muted hover:bg-soft hover:text-ink'
-              }`}
-            >
-              {n.icon}
-              <span className="whitespace-nowrap">{n.short}</span>
-            </Link>
-          )
-        })}
-      </nav>
+      <TabBar className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-lg shadow-[0_10px_30px_-8px_rgb(0_0_0/0.35)] lg:hidden" />
     </>
+  )
+}
+
+/** The five admin pages as icon tabs. Floating on admin pages (phones and tablets); in the scanner footer for admins. */
+export function TabBar({ className = '' }: { className?: string }) {
+  const path = usePathname()
+  const current = (href: string) => (href === '/admin' ? path === '/admin' : path.startsWith(href))
+  return (
+    <nav aria-label="Admin" className={`grid grid-cols-5 gap-1 rounded-2xl border border-line-strong bg-surface/90 p-1.5 backdrop-blur-md ${className}`}>
+      {NAV.map((n) => {
+        const on = current(n.href)
+        return (
+          <Link
+            key={n.href}
+            href={n.href}
+            aria-current={on ? 'page' : undefined}
+            className={`flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-bold transition-colors duration-200 ${
+              on ? 'bg-primary text-primary-ink' : 'text-muted hover:bg-soft hover:text-ink'
+            }`}
+          >
+            {n.icon}
+            <span className="whitespace-nowrap">{n.short}</span>
+          </Link>
+        )
+      })}
+    </nav>
   )
 }
