@@ -8,7 +8,7 @@ const NAV = [
   { href: '/admin/tickets', label: 'Tickets' },
   { href: '/admin/qr', label: 'QR codes' },
   { href: '/admin/events', label: 'Events' },
-  { href: '/scan', label: 'Open scanner' },
+  { href: '/scan', label: 'Scanner' },
 ]
 
 export default function AdminNav() {
