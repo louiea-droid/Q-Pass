@@ -2,7 +2,7 @@ import { ensureSchema } from '@/lib/store'
 import Logo from '../Logo'
 import SignInForm from './SignInForm'
 
-export const metadata = { title: 'Sign in · TAC Check-in' }
+export const metadata = { title: 'Sign in · Q-Pass' }
 
 export default async function SignIn() {
   // Checks the database connection (and, in Sheet mode, creates the Events and Log tabs).

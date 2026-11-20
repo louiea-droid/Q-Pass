@@ -54,7 +54,6 @@ export function CreateEventForm() {
           }}
           aria-invalid={!!nameProblem}
           aria-describedby="name-help"
-          placeholder="TAC Thanksgiving 2026"
           className={input}
         />
       </label>

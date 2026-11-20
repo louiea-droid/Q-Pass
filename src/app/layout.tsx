@@ -4,7 +4,7 @@ import './globals.css'
 
 const jakarta = Plus_Jakarta_Sans({ variable: '--font-jakarta', subsets: ['latin'] })
 
-export const metadata: Metadata = { title: 'TAC Check-in', description: 'Ticket check-in for TAC events' }
+export const metadata: Metadata = { title: 'Q-Pass', description: 'Ticket check-in for church events' }
 export const viewport: Viewport = { themeColor: '#2e3a87' }
 
 // Each area draws its own header: the scanner a compact phone bar, the admin desk a full nav.

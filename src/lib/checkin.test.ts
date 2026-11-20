@@ -28,10 +28,10 @@ test('not_found when the ticket is not in the event', () => {
   expect(r.outcome.result).toBe('not_found')
 })
 
-test('not_found with "Not a TAC ticket" when the QR is not a ticket', () => {
+test('not_found with "Not a Q-Pass ticket" when the QR is not a ticket', () => {
   const r = decideCheckIn({ ...base, scannedEvent: null, ticket: undefined })
   expect(r.outcome.result).toBe('not_found')
-  expect(r.outcome.message).toBe('Not a TAC ticket')
+  expect(r.outcome.message).toBe('Not a Q-Pass ticket')
 })
 
 test('second scan is already_checked_in with original time and staff, no overwrite', () => {

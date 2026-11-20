@@ -4,7 +4,7 @@ import { listEvents, listTickets } from '@/lib/store'
 import Desk from './Desk'
 import EventPicker from './EventPicker'
 
-export const metadata = { title: 'Check-in desk · TAC Check-in' }
+export const metadata = { title: 'Check-in desk · Q-Pass' }
 
 export default async function CheckInDesk({ searchParams }: PageProps<'/admin'>) {
   await requireStaff('admin')

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { listEvents } from '@/lib/store'
 import { CreateEventForm, EditEvent } from './EventForm'
 
-export const metadata = { title: 'Events · TAC Check-in' }
+export const metadata = { title: 'Events · Q-Pass' }
 
 export default async function EventsPage() {
   await requireStaff('admin')

@@ -12,7 +12,7 @@ export function decideCheckIn(args: {
   method: 'QR' | 'manual'
 }): { outcome: ScanOutcome; update?: Update } {
   const { scannedEvent, event, ticket, now, staffName, method } = args
-  if (scannedEvent === null) return { outcome: { result: 'not_found', message: 'Not a TAC ticket' } }
+  if (scannedEvent === null) return { outcome: { result: 'not_found', message: 'Not a Q-Pass ticket' } }
   if (scannedEvent !== event.name)
     return { outcome: { result: 'wrong_event', message: `This ticket is for ${scannedEvent}` } }
   if (event.status === 'closed') return { outcome: { result: 'event_closed', message: 'This event is closed' } }

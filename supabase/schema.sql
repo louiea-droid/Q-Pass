@@ -1,4 +1,4 @@
--- TAC Check-in database. Paste all of this into Supabase: SQL Editor > New query > Run.
+-- Q-Pass database. Paste all of this into Supabase: SQL Editor > New query > Run.
 -- Safe to run again: it only creates what's missing and replaces the functions.
 
 create table if not exists events (

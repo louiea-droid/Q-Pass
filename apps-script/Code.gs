@@ -1,5 +1,5 @@
 /** @OnlyCurrentDoc */
-// TAC Check-in: the bridge between the app and this Google Sheet.
+// Q-Pass: the bridge between the app and this Google Sheet.
 // @OnlyCurrentDoc above limits the script to this one spreadsheet, not all of yours.
 // Paste into the Sheet (Extensions > Apps Script), set the SECRET script property, deploy as a web app.
 // See README "One-time setup".

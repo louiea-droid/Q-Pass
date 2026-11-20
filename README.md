@@ -1,4 +1,4 @@
-# TAC Check-in
+# Q-Pass
 
 Staff scan the QR code on each paper ticket with their phone, and the check-in is saved straight away. Admins watch arrivals live, fix names, check people in by hand, download the list as a spreadsheet, and print QR codes for new events.
 
