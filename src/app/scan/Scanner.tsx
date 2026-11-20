@@ -215,7 +215,7 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
             </span>
           </div>
 
-          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#12142a] ${outcome || error ? 'h-56' : 'h-80'} transition-[height] duration-300`}>
+          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#12142a] ${outcome || error ? 'h-64 lg:h-56' : 'h-96 lg:h-80'} transition-[height] duration-300`}>
             <div id="reader" className="size-full [&_video]:size-full [&_video]:object-cover" />
             <svg className={`pointer-events-none absolute inset-0 m-auto ${paused ? 'opacity-40' : ''}`} width="170" height="170" viewBox="0 0 200 200" fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" aria-hidden="true">
               <path d="M8 48V20a12 12 0 0 1 12-12h28M152 8h28a12 12 0 0 1 12 12v28M192 152v28a12 12 0 0 1-12 12h-28M48 192H20a12 12 0 0 1-12-12v-28" />
@@ -314,7 +314,7 @@ function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
           </svg>
           Welcome! Checked in
         </span>
-        <span className="text-3xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
+        <span className="text-2xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
         {outcome.name && <span className="text-base text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
         {outcome.group && <GroupLine group={outcome.group} />}
         {!outcome.name && outcome.ticket && <AddName event={event} ticket={outcome.ticket} />}
@@ -332,7 +332,7 @@ function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
         {REJECT_TITLE[outcome.result] ?? 'Not checked in'}
       </span>
       {outcome.ticket ? (
-        <span className="text-3xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
+        <span className="text-2xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
       ) : null}
       <span className="text-base leading-relaxed text-[#ffe1dd]">
         {used
