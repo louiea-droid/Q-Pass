@@ -17,7 +17,7 @@ export default async function QrPage({ params }: PageProps<'/admin/events/[event
         <Link href="/admin/events" className="text-sm text-muted underline">
           Back to events
         </Link>
-        <h1 className="mt-2 text-3xl font-semibold wrap-anywhere">QR codes for {event.name}</h1>
+        <h1 className="mt-2 text-3xl font-extrabold wrap-anywhere">QR codes for {event.name}</h1>
         <p className="mt-2 max-w-prose text-muted">
           Each code is about 3 cm with its ticket number under it, 35 to an A4 page. Print, cut along the dashed lines, and
           attach each one to the ticket with the same number.

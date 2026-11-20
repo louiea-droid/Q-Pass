@@ -1,25 +1,28 @@
-import Link from 'next/link'
 import { requireStaff } from '@/lib/guard'
-
-const NAV = [
-  { href: '/admin', label: 'Dashboard' },
-  { href: '/admin/people', label: 'People' },
-  { href: '/admin/events', label: 'Events' },
-  { href: '/scan', label: 'Scanner' },
-]
+import Logo from '../Logo'
+import { signOutAction } from '../signin/actions'
+import AdminNav from './AdminNav'
 
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
-  await requireStaff('admin')
+  const staff = await requireStaff('admin')
   return (
     <>
-      <nav aria-label="Admin" className="no-print -mt-2 mb-6 flex gap-1 overflow-x-auto border-b border-line">
-        {NAV.map((n) => (
-          <Link key={n.href} href={n.href} className="shrink-0 px-3 py-2 text-muted hover:text-ink">
-            {n.label}
-          </Link>
-        ))}
-      </nav>
-      {children}
+      <header className="no-print border-b border-line bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3.5">
+          <span className="flex items-center gap-2.5 text-lg font-extrabold text-primary">
+            <Logo size={32} />
+            TAC Check-in
+          </span>
+          <AdminNav />
+          <form action={signOutAction} className="ml-auto flex min-w-0 items-center gap-3">
+            <span className="truncate text-sm text-muted">{staff.name}, admin</span>
+            <button className="h-10 shrink-0 rounded-xl border border-line-strong px-3.5 text-sm font-semibold transition-colors duration-200 hover:bg-soft">
+              Sign out
+            </button>
+          </form>
+        </div>
+      </header>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pt-7 pb-12">{children}</main>
     </>
   )
 }

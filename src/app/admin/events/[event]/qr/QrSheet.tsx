@@ -54,7 +54,7 @@ export default function QrSheet({ event, from, to }: { event: string; from: stri
               setCodes(null)
               setRange({ ...range, from: e.target.value })
             }}
-            className="mt-1 block w-28 rounded-md border border-line bg-surface px-3 py-2 tabular-nums"
+            className="mt-1 block w-28 rounded-xl border border-line bg-surface px-3 py-2 tabular-nums"
           />
         </label>
         <label className="text-sm font-semibold">
@@ -66,14 +66,14 @@ export default function QrSheet({ event, from, to }: { event: string; from: stri
               setCodes(null)
               setRange({ ...range, to: e.target.value })
             }}
-            className="mt-1 block w-28 rounded-md border border-line bg-surface px-3 py-2 tabular-nums"
+            className="mt-1 block w-28 rounded-xl border border-line bg-surface px-3 py-2 tabular-nums"
           />
         </label>
         <button
           type="button"
           disabled={!!problem || !codes}
           onClick={() => window.print()}
-          className="rounded-lg bg-primary px-5 py-2 font-semibold text-primary-ink disabled:opacity-60"
+          className="rounded-xl bg-primary px-5 py-2 font-semibold text-primary-ink disabled:opacity-60"
         >
           Print
         </button>

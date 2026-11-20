@@ -6,7 +6,7 @@ import { createEventAction, updateEventAction } from '../../actions'
 import { isValidEventName, normalizeTicket } from '@/lib/qr'
 import type { EventInfo } from '@/lib/types'
 
-const input = 'mt-1 w-full rounded-md border border-line bg-surface px-3 py-2'
+const input = 'mt-1 w-full rounded-xl border border-line bg-surface px-3 py-2'
 
 export function CreateEventForm() {
   const router = useRouter()
@@ -18,7 +18,7 @@ export function CreateEventForm() {
 
   return (
     <form
-      className="h-fit rounded-xl border border-line bg-surface p-4"
+      className="h-fit rounded-3xl border border-line bg-surface p-6"
       onSubmit={(ev) => {
         ev.preventDefault()
         const f = new FormData(ev.currentTarget)
@@ -40,7 +40,7 @@ export function CreateEventForm() {
         })
       }}
     >
-      <h2 className="text-xl font-semibold">New event</h2>
+      <h2 className="text-xl font-extrabold">New event</h2>
       <label className="mt-3 block text-sm font-semibold">
         Event name
         <input
@@ -85,7 +85,7 @@ export function CreateEventForm() {
       </div>
       <button
         disabled={pending || !!nameProblem || !name.trim()}
-        className="mt-4 w-full rounded-lg bg-primary px-4 py-2 font-semibold text-primary-ink disabled:opacity-60"
+        className="mt-4 w-full rounded-xl bg-primary px-4 py-2 font-semibold text-primary-ink disabled:opacity-60"
       >
         {pending ? 'Creating tickets…' : 'Create event'}
       </button>
@@ -136,7 +136,7 @@ export function EditEvent({ event }: { event: EventInfo }) {
           <textarea name="details" rows={2} defaultValue={event.details} className={input} />
         </label>
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-          <button disabled={pending} className="rounded-md bg-primary px-4 py-2 font-semibold text-primary-ink disabled:opacity-60">
+          <button disabled={pending} className="rounded-xl bg-primary px-4 py-2 font-semibold text-primary-ink disabled:opacity-60">
             {pending ? 'Saving…' : 'Save details'}
           </button>
           <button
@@ -147,7 +147,7 @@ export function EditEvent({ event }: { event: EventInfo }) {
               if (!closing || confirm(`Close ${event.name}? Scanners will reject its tickets until you reopen it.`))
                 save({ status: closing ? 'closed' : 'open' }, closing ? 'Event closed.' : 'Event reopened.')
             }}
-            className="rounded-md border border-line px-4 py-2 disabled:opacity-60"
+            className="rounded-xl border border-line px-4 py-2 disabled:opacity-60"
           >
             {event.status === 'open' ? 'Close event' : 'Reopen event'}
           </button>
