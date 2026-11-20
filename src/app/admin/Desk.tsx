@@ -86,6 +86,8 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
             <h2 id="live" className="text-lg font-extrabold">
               At the door now
             </h2>
+            {/* Fixed height, scrolls inside: new scans never push the cards below it down. */}
+            <div className="h-80 overflow-y-auto" tabIndex={0} role="region" aria-label="Latest scans">
             {!stats ? (
               <p className="text-sm text-muted">Loading…</p>
             ) : stats.recent.length === 0 ? (
@@ -114,6 +116,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
                 })}
               </ol>
             )}
+            </div>
           </section>
 
           <section aria-labelledby="team" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-4 sm:p-5">
@@ -143,9 +146,14 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
 
 function Arrivals({ stats, error }: { stats: Stats | null; error: string }) {
   if (!stats)
+    // Same shape as the loaded card below, so nothing under it jumps when the numbers arrive.
     return (
-      <section className="rounded-2xl border border-line bg-surface p-4 sm:p-5" aria-busy="true">
-        <p className={error ? 'text-bad-text' : 'text-muted'} role={error ? 'alert' : 'status'}>
+      <section className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-4 sm:p-5" aria-busy="true">
+        <p className="text-base text-muted">
+          <strong className="text-4xl font-extrabold text-line-strong">–</strong>
+        </p>
+        <div className="h-2.5 rounded-full bg-soft" aria-hidden="true" />
+        <p className={`text-sm ${error ? 'text-bad-text' : 'text-muted'}`} role={error ? 'alert' : 'status'}>
           {error ? `Couldn’t load arrivals: ${error}. Retrying every 10 seconds.` : 'Loading arrivals…'}
         </p>
       </section>

@@ -65,6 +65,9 @@
 
 :root { color-scheme: light; }
 
+/* Always reserve the scrollbar's space, so pages don't shift sideways between short and long pages. */
+html { scrollbar-gutter: stable; }
+
 /* Thin scrollbars in the border colour; they follow light/dark mode through the tokens. */
 * {
   scrollbar-width: thin;
