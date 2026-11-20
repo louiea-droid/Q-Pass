@@ -56,7 +56,7 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
 
   return (
     <form
-      className="flex max-w-2xl flex-col gap-4 rounded-2xl border border-line bg-surface p-5"
+      className="flex max-w-2xl flex-col gap-4 rounded-2xl border border-line bg-surface p-4 sm:p-5"
       onSubmit={(ev) => {
         ev.preventDefault()
         if (!name.trim()) return setError('Type the event name first.')

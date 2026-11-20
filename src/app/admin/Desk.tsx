@@ -82,7 +82,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
       <div className="flex flex-wrap items-start gap-5">
         <GuestList event={event} tickets={tickets} readOnly={readOnly} />
         <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-5">
-          <section aria-labelledby="live" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-5">
+          <section aria-labelledby="live" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-4 sm:p-5">
             <h2 id="live" className="text-lg font-extrabold">
               At the door now
             </h2>
@@ -116,7 +116,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
             )}
           </section>
 
-          <section aria-labelledby="team" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-5">
+          <section aria-labelledby="team" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-4 sm:p-5">
             <h2 id="team" className="text-lg font-extrabold">
               Check-ins by person
             </h2>
@@ -144,7 +144,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
 function Arrivals({ stats, error }: { stats: Stats | null; error: string }) {
   if (!stats)
     return (
-      <section className="rounded-2xl border border-line bg-surface p-5" aria-busy="true">
+      <section className="rounded-2xl border border-line bg-surface p-4 sm:p-5" aria-busy="true">
         <p className={error ? 'text-bad-text' : 'text-muted'} role={error ? 'alert' : 'status'}>
           {error ? `Couldn’t load arrivals: ${error}. Retrying every 10 seconds.` : 'Loading arrivals…'}
         </p>
@@ -156,7 +156,7 @@ function Arrivals({ stats, error }: { stats: Stats | null; error: string }) {
   const walkIns = stats.checkedIn - stats.namedCheckedIn
   const pct = expected ? Math.round((arrived / expected) * 100) : 0
   return (
-    <section aria-label="Arrivals" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-5">
+    <section aria-label="Arrivals" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-4 sm:p-5">
       <p className="text-base text-muted">
         <strong className="text-4xl font-extrabold text-ink tabular-nums">{arrived.toLocaleString('en')}</strong> of {expected.toLocaleString('en')}{' '}
         {stats.named ? 'expected guests have arrived' : 'tickets checked in'}

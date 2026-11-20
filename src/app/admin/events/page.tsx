@@ -76,7 +76,7 @@ export default async function EventsPage() {
           const count = Number(e.ticketTo) - Number(e.ticketFrom) + 1
           const open = e.status === 'open'
           return (
-            <li key={e.name} className={`flex flex-col gap-4 rounded-2xl border bg-surface p-5 ${open ? 'border-line' : 'border-line opacity-80'}`}>
+            <li key={e.name} className={`flex flex-col gap-4 rounded-2xl border bg-surface p-4 sm:p-5 ${open ? 'border-line' : 'border-line opacity-80'}`}>
               <div className="flex items-start gap-4">
                 {e.date && <DateTile date={e.date} />}
                 <div className="flex min-w-0 flex-1 flex-col gap-2">

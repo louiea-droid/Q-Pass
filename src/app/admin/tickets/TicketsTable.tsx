@@ -114,7 +114,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-5">
+    <section className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <p className="text-base text-muted">
@@ -200,7 +200,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
           </button>
         </p>
       ) : (
-        <div className="max-h-[calc(100dvh-13rem)] overflow-auto rounded-xl border border-line">
+        <div className="relative max-h-[calc(100dvh-13rem)] overflow-auto rounded-xl border border-line">
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 z-10 bg-soft text-[13px] text-muted shadow-[0_1px_0_var(--line)]">
               <tr>

@@ -32,7 +32,7 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
   const shown = matches.slice(current * size, current * size + size)
 
   return (
-    <section aria-labelledby="find" className="flex min-w-0 flex-[999_1_560px] flex-col gap-3 rounded-2xl border border-line bg-surface p-5">
+    <section aria-labelledby="find" className="flex min-w-0 flex-[999_1_560px] flex-col gap-3 rounded-2xl border border-line bg-surface p-4 sm:p-5">
       <h2 id="find" className="text-lg font-extrabold">
         Find a guest
       </h2>
