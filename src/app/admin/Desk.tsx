@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { headline } from '@/lib/display'
+import { arrivalCounts, headline } from '@/lib/display'
 import type { LogEntry, LogResult, Ticket } from '@/lib/types'
 import GuestList from './GuestList'
 
@@ -34,6 +34,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
   const [error, setError] = useState('')
   const seen = useRef<number | null>(null)
   const names = useMemo(() => new Map(tickets.map((t) => [t.ticket, t.name])), [tickets])
+  const initial = useMemo(() => arrivalCounts(tickets), [tickets])
 
   useEffect(() => {
     let cancelled = false
@@ -78,7 +79,8 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
           This event is closed, so the list is read-only. Reopen it on Events and QR codes to make changes.
         </p>
       )}
-      <Arrivals stats={stats} error={error} />
+      {/* Real numbers from the start (worked out from the ticket list), so the card never changes size when the refresh lands. */}
+      <Arrivals stats={stats ?? initial} error={error} />
       <div className="flex flex-wrap items-start gap-5">
         <GuestList event={event} tickets={tickets} readOnly={readOnly} />
         <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-5">
@@ -144,20 +146,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
   )
 }
 
-function Arrivals({ stats, error }: { stats: Stats | null; error: string }) {
-  if (!stats)
-    // Same shape as the loaded card below, so nothing under it jumps when the numbers arrive.
-    return (
-      <section className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-4 sm:p-5" aria-busy="true">
-        <p className="text-base text-muted">
-          <strong className="text-4xl font-extrabold text-line-strong">–</strong>
-        </p>
-        <div className="h-2.5 rounded-full bg-soft" aria-hidden="true" />
-        <p className={`text-sm ${error ? 'text-bad-text' : 'text-muted'}`} role={error ? 'alert' : 'status'}>
-          {error ? `Couldn’t load arrivals: ${error}. Retrying every 10 seconds.` : 'Loading arrivals…'}
-        </p>
-      </section>
-    )
+function Arrivals({ stats, error }: { stats: Pick<Stats, 'total' | 'named' | 'namedCheckedIn' | 'checkedIn'>; error: string }) {
   // With names entered, "expected" means named guests; otherwise every printed ticket.
   const expected = stats.named || stats.total
   const arrived = stats.named ? stats.namedCheckedIn : stats.checkedIn

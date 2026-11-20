@@ -18,3 +18,14 @@ export function matchTicket(
   const q = query.trim().toLowerCase()
   return !q || t.ticket.includes(q) || t.name.toLowerCase().includes(q) || t.info.toLowerCase().includes(q)
 }
+
+/** The desk's headline numbers, from the ticket list (the live refresh then keeps them current). */
+export function arrivalCounts(tickets: { name: string; checkedInAt: string }[]) {
+  const named = tickets.filter(isGiven)
+  return {
+    total: tickets.length,
+    named: named.length,
+    namedCheckedIn: named.filter((t) => t.checkedInAt).length,
+    checkedIn: tickets.filter((t) => t.checkedInAt).length,
+  }
+}

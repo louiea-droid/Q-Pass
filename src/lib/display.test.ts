@@ -37,3 +37,14 @@ test('search matches ticket number, name or details, ignoring case and spaces', 
   expect(matchTicket(t, 'CHOIR', 'all')).toBe(true)
   expect(matchTicket(t, 'maria', 'all')).toBe(false)
 })
+
+test('arrival counts from the ticket list, so the desk shows real numbers before its first refresh', async () => {
+  const { arrivalCounts } = await import('./display')
+  const t = (name: string, checkedInAt = '') => ({ ticket: '', name, checkedInAt })
+  expect(arrivalCounts([t('Ana', '2026-11-26T09:00:00Z'), t('Juan'), t('', '2026-11-26T09:05:00Z'), t('')])).toEqual({
+    total: 4,
+    named: 2,
+    namedCheckedIn: 1,
+    checkedIn: 2,
+  })
+})
