@@ -71,12 +71,22 @@ The app creates the `Events` and `Log` tabs on first visit. Editing the script l
 
 Moving between Supabase and the Sheet doesn't copy data across. Pick one before you print QR codes and enter names.
 
+## Test the camera on a phone before going online
+
+Phones only allow the camera on secure (https) sites. To try it on your own network first:
+
+1. Run `npm run dev:phone` (instead of `npm run dev`).
+2. Connect the phone to the same Wi-Fi, or to this PC’s hotspot.
+3. Open `https://<this PC’s address>:3000/scan` on the phone. The PC’s address is in `next.config.ts` under `allowedDevOrigins`; add yours there if it’s different.
+4. The phone warns that the connection isn’t private. That’s expected for a test certificate: tap **Advanced → Proceed**.
+
 ## Put it online (Netlify, free)
 
 1. Push this folder to a GitHub repository (private is fine).
 2. On <https://app.netlify.com>, choose **Add new site → Import an existing project** and pick the repository. Netlify detects Next.js by itself.
 3. Under **Site configuration → Environment variables**, add the same values as in `.env.local`.
-4. Deploy, and share the site address and the scanner passcode with your team.
+4. Deploy. Then open the site, sign in as admin, and use **Share scanner** on the Check-in desk to get volunteers in.
+5. Netlify builds again by itself every time you push to GitHub.
 
 ## Handing out tickets
 
@@ -87,8 +97,8 @@ For single tickets, open **Tickets**, find the ticket number you are handing ove
 ## Day before the event
 
 - Open the app (this also wakes Supabase if it paused). Make sure the event is **open** on the Events page.
-- Have every scanner sign in on their own phone, with their name and the scanner passcode, and pick the event.
-- Scan one test ticket, then undo it on the People page.
+- On the Check-in desk, click **Share scanner**. Volunteers point their phone camera at the QR code, then sign in with their own name and the scanner passcode (tap **Show** to read it out). They only get the scanner, never the admin pages.
+- Scan one test ticket, then undo it on the Check-in desk.
 - Charge the phones. Mobile data is a good backup if the venue Wi-Fi drops; the app needs internet.
 
 ## During the event
