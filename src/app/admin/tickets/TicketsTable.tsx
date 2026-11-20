@@ -34,7 +34,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<TicketFilter>('all')
   const [page, setPage] = useState(0)
-  const [size, setSize] = useState(25)
+  const [size, setSize] = useState(10)
 
   // Filter on what's typed, so a name you just entered moves the ticket to "Given" right away.
   const rows = tickets.map((t) => ({ ...t, ...draft[t.ticket] }))
