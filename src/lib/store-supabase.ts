@@ -9,7 +9,9 @@ import type { EventInfo, LogEntry, LogResult, ScanOutcome, Staff, Ticket } from 
 type Row = Record<string, unknown>
 
 async function sb<T>(path: string, init: { method?: string; body?: unknown; headers?: Record<string, string> } = {}) {
-  const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // Accept the base URL or the ".../rest/v1/" form the Supabase dashboard's Copy button gives.
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/(rest\/v1)?\/?$/, '')
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
   if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set')
   const res = await fetch(`${url}/rest/v1/${path}`, {
     method: init.method ?? 'GET',

@@ -121,3 +121,10 @@ test('new sb_secret_ keys go only in the apikey header; legacy JWT keys also as 
   await listEvents()
   expect(reqs.at(-1)!.headers.Authorization).toBe('Bearer service-key')
 })
+
+test('SUPABASE_URL copied with /rest/v1/ on the end still works', async () => {
+  process.env.SUPABASE_URL = 'https://proj.supabase.co/rest/v1/'
+  const { listEvents } = await import('./store-supabase')
+  await listEvents()
+  expect(reqs.at(-1)!.path).toBe('events')
+})
