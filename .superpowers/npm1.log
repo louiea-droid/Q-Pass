@@ -1,0 +1,39 @@
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+
+added 59 packages, and audited 420 packages in 17s
+
+156 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: vitest@5.1.1
+npm error Found: @types/node@20.19.43
+npm error node_modules/@types/node
+npm error   dev @types/node@"^20" from the root project
+npm error   @types/node@"*" from @types/qrcode@1.5.6
+npm error   node_modules/@types/qrcode
+npm error     dev @types/qrcode@"*" from the root project
+npm error   1 more (vite)
+npm error
+npm error Could not resolve dependency:
+npm error peerOptional @types/node@"^22.0.0 || >=24.0.0" from vitest@5.1.1
+npm error node_modules/vitest
+npm error   dev vitest@"*" from the root project
+npm error
+npm error Conflicting peer dependency: @types/node@26.6.6
+npm error node_modules/@types/node
+npm error   peerOptional @types/node@"^22.0.0 || >=24.0.0" from vitest@5.1.1
+npm error   node_modules/vitest
+npm error     dev vitest@"*" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error C:\Users\Administrator\AppData\Local\npm-cache\_logs\2026-11-20T14_29_03_466Z-eresolve-report.txt
+npm error A complete log of this run can be found in: C:\Users\Administrator\AppData\Local\npm-cache\_logs\2026-11-20T14_29_03_466Z-debug-0.log
