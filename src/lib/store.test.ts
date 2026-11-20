@@ -1,66 +1,80 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 
-// Fake Google Sheets API: just enough of the surface store.ts uses.
-const fake = vi.hoisted(() => {
-  const state = {
-    values: {} as Record<string, string[][]>,
-    appendFails: false,
-    batchUpdates: [] as unknown[],
-    updates: [] as { range: string; values: string[][] }[],
-  }
-  const api = {
-    spreadsheets: {
-      get: async () => ({ data: { sheets: [] } }),
-      batchUpdate: async ({ requestBody }: { requestBody: unknown }) => {
-        state.batchUpdates.push(requestBody)
-        return { data: {} }
-      },
-      values: {
-        get: async ({ range }: { range: string }) => ({ data: { values: state.values[range] ?? [] } }),
-        update: async ({ range, requestBody }: { range: string; requestBody: { values: string[][] } }) => {
-          state.updates.push({ range, values: requestBody.values })
-          return { data: {} }
-        },
-        append: async () => {
-          if (state.appendFails) throw Object.assign(new Error('quota'), { code: 429 })
-          return { data: {} }
-        },
-      },
-    },
-  }
-  return { state, api }
-})
-
 vi.mock('server-only', () => ({}))
-vi.mock('@googleapis/sheets', () => ({ auth: { JWT: class {} }, sheets: () => fake.api }))
 
-const staff = { email: 'maria@church.org', name: 'Maria', role: 'scanner' as const }
+// Fake Apps Script web app: answers the ops store.ts sends.
+type Call = { op: string; args: Record<string, unknown> }
+let calls: Call[] = []
+let handlers: Record<string, (args: Record<string, unknown>) => unknown> = {}
 
 beforeEach(() => {
   vi.resetModules()
-  vi.useFakeTimers({ shouldAdvanceTime: true, advanceTimeDelta: 1000 })
-  fake.state.values = {
-    'Events!A2:G': [['TAC Gala', '', '', '', '0000', '1000', 'open']],
-    "'TAC Gala'!A2:G": [['0001', 'Juan', '', '', '', '', '']],
+  process.env.APPS_SCRIPT_URL = 'https://script.example/exec'
+  process.env.APPS_SCRIPT_SECRET = 's3cret'
+  calls = []
+  handlers = {
+    read: ({ range }) => (range === 'Events!A2:G' ? [['TAC Gala', '', '', '', '0000', '1000', 'open']] : []),
+    append: () => null,
+    addSheet: () => null,
+    write: () => null,
   }
-  fake.state.appendFails = false
-  fake.state.batchUpdates = []
-  fake.state.updates = []
+  vi.stubGlobal('fetch', async (_url: string, init: { body: string }) => {
+    const { op, args, secret } = JSON.parse(init.body)
+    calls.push({ op, args })
+    if (secret !== 's3cret') return new Response(JSON.stringify({ ok: false, error: 'Wrong secret' }))
+    try {
+      return new Response(JSON.stringify({ ok: true, data: handlers[op]!(args) }))
+    } catch (e) {
+      return new Response(JSON.stringify({ ok: false, error: (e as Error).message }))
+    }
+  })
 })
 
-test('a check-in still succeeds when only the Log write fails', async () => {
+const staff = { email: 'maria@church.org', name: 'Maria', role: 'scanner' as const }
+
+test('first scan of a ticket is checked in in one locked script call', async () => {
+  handlers.checkIn = () => ['0001', 'Juan', '', '', '', '', '']
   const { checkIn } = await import('./store')
-  fake.state.appendFails = true
   const r = await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
-  expect(r.result).toBe('checked_in')
-  expect(fake.state.updates.some((u) => u.range === "'TAC Gala'!E2:G2")).toBe(true)
+  expect(r).toMatchObject({ result: 'checked_in', name: 'Juan', ticket: '0001' })
+  const call = calls.find((c) => c.op === 'checkIn')!
+  expect(call.args).toMatchObject({ event: 'TAC Gala', ticket: '0001', staffName: 'Maria', staffEmail: 'maria@church.org', method: 'QR' })
+})
+
+test('scan of a used ticket reports when and by whom, from the row before the scan', async () => {
+  handlers.checkIn = () => ['0001', 'Juan', '', '', '2026-11-26T08:00:00.000Z', 'Ana', 'QR']
+  const { checkIn } = await import('./store')
+  const r = await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
+  expect(r).toMatchObject({ result: 'already_checked_in', checkedInAt: '2026-11-26T08:00:00.000Z', checkedInBy: 'Ana' })
+})
+
+test('ticket missing from the event tab is not_found', async () => {
+  handlers.checkIn = () => null
+  const { checkIn } = await import('./store')
+  const r = await checkIn({ payload: null, event: 'TAC Gala', ticket: '0999', staff, method: 'manual' })
+  expect(r.result).toBe('not_found')
+})
+
+test('a rejected scan still answers the scanner when the Log write fails', async () => {
+  handlers.append = () => {
+    throw new Error('Service invoked too many times')
+  }
+  const { checkIn } = await import('./store')
+  const r = await checkIn({ payload: 'Old Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
+  expect(r.result).toBe('wrong_event')
+  expect(calls.some((c) => c.op === 'checkIn')).toBe(false)
 })
 
 test('a new event tab is created with enough rows for every ticket', async () => {
+  handlers.read = () => []
   const { createEvent } = await import('./store')
-  fake.state.values['Events!A2:G'] = []
   await createEvent({ name: 'New Event', date: '', venue: '', details: '', ticketFrom: '0000', ticketTo: '1000', status: 'open' })
-  const req = JSON.stringify(fake.state.batchUpdates[0])
-  const rows = Number(/"rowCount":(\d+)/.exec(req)?.[1] ?? 0)
-  expect(rows).toBeGreaterThanOrEqual(1002) // header + 1,001 tickets
+  const add = calls.find((c) => c.op === 'addSheet')!
+  expect(add.args.rowCount).toBeGreaterThanOrEqual(1002)
+})
+
+test('script errors surface their message', async () => {
+  process.env.APPS_SCRIPT_SECRET = 'wrong'
+  const { listEvents } = await import('./store')
+  await expect(listEvents()).rejects.toThrow('Wrong secret')
 })

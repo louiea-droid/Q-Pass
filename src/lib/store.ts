@@ -1,11 +1,11 @@
 import 'server-only'
-import { auth as gauth, sheets as sheetsApi } from '@googleapis/sheets'
 import { decideCheckIn } from './checkin'
 import { isValidEventName, normalizeTicket, parsePayload, ticketRange } from './qr'
 import { parseStaffRows, withEnvAdmins } from './staff'
 import type { EventInfo, LogEntry, LogResult, ScanOutcome, Staff, Ticket } from './types'
 
-// The only module that talks to Google Sheets. Swap this file to move to Supabase.
+// The only module that talks to the Google Sheet, via the Apps Script in apps-script/Code.gs.
+// Swap this file to move to Supabase.
 
 const HEADERS = {
   Staff: ['Email', 'Name', 'Role', 'Active'],
@@ -14,65 +14,38 @@ const HEADERS = {
 }
 const TICKET_HEADERS = ['Ticket', 'Name', 'Info', 'Notes', 'CheckedInAt', 'CheckedInBy', 'Method']
 
-let client: ReturnType<typeof sheetsApi> | undefined
-function api() {
-  client ??= sheetsApi({
-    version: 'v4',
-    auth: new gauth.JWT({
-      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    }),
-  })
-  return client
-}
-const spreadsheetId = () => process.env.SHEET_ID
-
-/** Retries Google's per-minute quota errors (429) with backoff. */
-async function call<T>(fn: () => Promise<T>): Promise<T> {
-  for (const wait of [500, 1000, 2000, 0]) {
+/** Calls one operation of the Sheet's Apps Script web app. Retries once on network/Google hiccups. */
+async function gas<T>(op: string, args: Record<string, unknown> = {}): Promise<T> {
+  const url = process.env.APPS_SCRIPT_URL
+  if (!url) throw new Error('APPS_SCRIPT_URL is not set')
+  const body = JSON.stringify({ secret: process.env.APPS_SCRIPT_SECRET, op, args })
+  let lastError = 'Busy, try again'
+  for (const wait of [0, 1000]) {
+    if (wait) await new Promise((r) => setTimeout(r, wait))
+    let res: { ok: boolean; data?: T; error?: string }
     try {
-      return await fn()
-    } catch (e) {
-      const code = (e as { code?: number; status?: number }).code ?? (e as { status?: number }).status
-      if (code !== 429) throw e
-      if (!wait) break
-      await new Promise((r) => setTimeout(r, wait))
+      // text/plain keeps it a "simple" request; Apps Script answers via a redirect that fetch follows.
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body, cache: 'no-store' })
+      res = await r.json()
+    } catch {
+      continue // network error or Google's HTML error page: retry
     }
+    if (res.ok) return res.data as T
+    lastError = res.error ?? lastError
+    if (!/too many times|lock|timed out/i.test(lastError)) break // only retry Google's busy errors
   }
-  throw new Error('Busy, try again')
+  throw new Error(lastError)
 }
 
 const tab = (name: string) => `'${name}'`
-const str = (v: unknown) => (v == null ? '' : String(v))
 
-async function read(range: string): Promise<string[][]> {
-  const res = await call(() => api().spreadsheets.values.get({ spreadsheetId: spreadsheetId(), range }))
-  return (res.data.values ?? []).map((r) => r.map(str))
-}
-async function write(range: string, values: string[][]) {
-  await call(() =>
-    api().spreadsheets.values.update({ spreadsheetId: spreadsheetId(), range, valueInputOption: 'RAW', requestBody: { values } }),
-  )
-}
-async function append(sheet: string, values: string[][]) {
-  await call(() =>
-    api().spreadsheets.values.append({
-      spreadsheetId: spreadsheetId(), range: `${tab(sheet)}!A1`, valueInputOption: 'RAW', insertDataOption: 'INSERT_ROWS',
-      requestBody: { values },
-    }),
-  )
-}
-async function addTab(title: string, headers: string[], rowCount = 1000) {
-  await call(() =>
-    api().spreadsheets.batchUpdate({ spreadsheetId: spreadsheetId(), requestBody: { requests: [{ addSheet: { properties: { title, gridProperties: { rowCount } } } }] } }),
-  )
-  await write(`${tab(title)}!A1`, [headers])
-}
+const read = (range: string) => gas<string[][]>('read', { range })
+const write = (range: string, values: string[][]) => gas<null>('write', { range, values })
+const append = (sheet: string, values: string[][]) => gas<null>('append', { sheet, values })
+const addTab = (title: string, headers: string[], rowCount = 1000) => gas<null>('addSheet', { title, headers, rowCount })
 
 export async function ensureSchema(): Promise<void> {
-  const meta = await call(() => api().spreadsheets.get({ spreadsheetId: spreadsheetId(), fields: 'sheets.properties.title' }))
-  const have = new Set((meta.data.sheets ?? []).map((s) => s.properties?.title))
+  const have = new Set(await gas<string[]>('titles'))
   for (const [name, headers] of Object.entries(HEADERS)) if (!have.has(name)) await addTab(name, headers)
 }
 
@@ -170,15 +143,22 @@ export async function checkIn(args: {
   const parsed = args.method === 'QR' ? parsePayload(args.payload ?? '') : null
   const scannedEvent = args.method === 'manual' ? event.name : (parsed?.event ?? null)
   const ticketNo = args.method === 'manual' ? args.ticket : parsed?.ticket
-  // Only read the event tab when the earlier rules can't already decide (saves quota).
-  const found = scannedEvent === event.name && event.status === 'open' && ticketNo ? await findRow(event.name, ticketNo) : undefined
-  const { outcome, update } = decideCheckIn({
-    scannedEvent, event, ticket: found?.t, now: new Date().toISOString(), staffName: args.staff.name, method: args.method,
+  const now = new Date().toISOString()
+  const decide = (ticket: Ticket | undefined) =>
+    decideCheckIn({ scannedEvent, event, ticket, now, staffName: args.staff.name, method: args.method }).outcome
+
+  // Event-level rejections (not a ticket, other event, closed) need no ticket lookup.
+  const early = decide(ticketNo ? { ticket: ticketNo } as Ticket : undefined)
+  if (early.result !== 'checked_in' && early.result !== 'already_checked_in') {
+    await log(event.name, ticketNo ?? '', early.result, args.staff, args.method).catch((e) => console.error('Log write failed', e))
+    return early
+  }
+
+  // One locked script call finds the row, marks it if still free, and logs: two phones can't both win.
+  const before = await gas<string[] | null>('checkIn', {
+    event: event.name, ticket: ticketNo, now, staffName: args.staff.name, staffEmail: args.staff.email, method: args.method,
   })
-  if (update && found) await write(`${tab(event.name)}!E${found.row}:G${found.row}`, [[update.checkedInAt, update.checkedInBy, update.method]])
-  await log(event.name, ticketNo ?? '', outcome.result, args.staff, args.method)
-    .catch((e) => console.error('Log write failed (check-in itself was saved)', e))
-  return outcome
+  return decide(before ? toTicket(before) : undefined)
 }
 
 export async function undoCheckIn(event: string, ticket: string, staff: Staff): Promise<void> {
@@ -196,10 +176,7 @@ export async function getDashboard(event: string): Promise<{
   perStaff: { name: string; count: number }[]
   recent: LogEntry[]
 }> {
-  const res = await call(() =>
-    api().spreadsheets.values.batchGet({ spreadsheetId: spreadsheetId(), ranges: [`${tab(event)}!A2:G`, 'Log!A2:G'] }),
-  )
-  const [ticketRows, logRows] = (res.data.valueRanges ?? []).map((v) => (v.values ?? []).map((r) => r.map(str)))
+  const [ticketRows, logRows] = await gas<string[][][]>('readMany', { ranges: [`${tab(event)}!A2:G`, 'Log!A2:G'] })
   const tickets = (ticketRows ?? []).filter((r) => r[0]).map(toTicket)
   const counts = new Map<string, number>()
   for (const t of tickets) if (t.checkedInAt) counts.set(t.checkedInBy, (counts.get(t.checkedInBy) ?? 0) + 1)
