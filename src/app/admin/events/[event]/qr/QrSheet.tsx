@@ -73,7 +73,7 @@ export default function QrSheet({ event, from, to }: { event: string; from: stri
           type="button"
           disabled={!!problem || !codes}
           onClick={() => window.print()}
-          className="rounded-lg bg-pine px-5 py-2 font-semibold text-pine-ink disabled:opacity-60"
+          className="rounded-lg bg-primary px-5 py-2 font-semibold text-primary-ink disabled:opacity-60"
         >
           Print
         </button>

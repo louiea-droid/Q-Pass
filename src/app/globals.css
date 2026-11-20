@@ -1,32 +1,39 @@
 @import "tailwindcss";
 
-/* Evergreen + harvest wheat. Scan results are the only loud color on screen. */
+/* Deep indigo for actions, a touch of harvest gold, green/red only for scan results. */
 :root {
-  --paper: #f6f7f3;
+  --paper: #f6f7fb;
   --surface: #ffffff;
-  --ink: #17211b;
-  --muted: #5e6b63;
-  --line: #d9ded8;
-  --pine: #1f4a36;
-  --pine-ink: #ffffff;
-  --wheat: #a8771b;
-  --ok: #1e7a46;
+  --ink: #1b1e3c;
+  --muted: #4a4f6e;
+  --line: #e4e6ef;
+  --line-strong: #d5d8e6;
+  --primary: #2e3a87;
+  --primary-hover: #1f2866;
+  --primary-ink: #ffffff;
+  --soft: #eceef8;
+  --gold: #e2b33c;
+  --ok: #146c3a;
   --bad: #b42318;
   --on-flag: #ffffff;
+  --note: #fff7e0;
+  --note-ink: #5c4508;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #0f1612;
-    --surface: #16201a;
-    --ink: #e7ece8;
-    --muted: #9aa79f;
-    --line: #2a362f;
-    --pine: #7fc4a0;
-    --pine-ink: #0f1612;
-    --wheat: #e0b357;
-    --ok: #17663a;
-    --bad: #9c1f15;
+    --paper: #0f1124;
+    --surface: #181b33;
+    --ink: #e8eaf6;
+    --muted: #a9aecb;
+    --line: #2c3050;
+    --line-strong: #3a3f63;
+    --primary: #9aa6f2;
+    --primary-hover: #b6befa;
+    --primary-ink: #10122a;
+    --soft: #23284a;
+    --note: #2e2611;
+    --note-ink: #f3dfa6;
   }
 }
 
@@ -36,14 +43,18 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
-  --color-pine: var(--pine);
-  --color-pine-ink: var(--pine-ink);
-  --color-wheat: var(--wheat);
+  --color-line-strong: var(--line-strong);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-ink: var(--primary-ink);
+  --color-soft: var(--soft);
+  --color-gold: var(--gold);
   --color-ok: var(--ok);
   --color-bad: var(--bad);
   --color-on-flag: var(--on-flag);
-  --font-sans: var(--font-figtree);
-  --font-serif: var(--font-literata);
+  --color-note: var(--note);
+  --color-note-ink: var(--note-ink);
+  --font-sans: var(--font-jakarta);
 }
 
 body {
@@ -52,8 +63,16 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid var(--wheat);
+  outline: 3px solid var(--gold);
   outline-offset: 2px;
+}
+
+button:not(:disabled), [role="button"], summary, label:has(> input[type="radio"]) {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
 }
 
 @media print {

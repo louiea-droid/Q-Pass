@@ -11,7 +11,7 @@ export default async function EventsPage() {
   return (
     <section className="grid gap-8 lg:grid-cols-[2fr_1fr]">
       <div>
-        <h1 className="font-serif text-3xl font-semibold">Events</h1>
+        <h1 className="text-3xl font-semibold">Events</h1>
         {events.length === 0 ? (
           <p className="mt-3 text-muted">No events yet. Create one to get its ticket list and QR codes.</p>
         ) : (
@@ -20,7 +20,7 @@ export default async function EventsPage() {
               <li key={e.name} className="rounded-xl border border-line bg-surface p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="font-serif text-xl font-semibold wrap-anywhere">{e.name}</h2>
+                    <h2 className="text-xl font-semibold wrap-anywhere">{e.name}</h2>
                     <p className="text-sm text-muted">
                       Tickets {e.ticketFrom} to {e.ticketTo}
                       {e.status === 'closed' ? ', closed' : ', open for scanning'}
@@ -29,7 +29,7 @@ export default async function EventsPage() {
                   <div className="flex flex-wrap gap-2">
                     <Link
                       href={`/admin/events/${encodeURIComponent(e.name)}/qr`}
-                      className="rounded-md bg-pine px-3 py-1.5 text-sm font-semibold text-pine-ink"
+                      className="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-ink"
                     >
                       Print QR codes
                     </Link>

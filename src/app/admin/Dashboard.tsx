@@ -81,8 +81,8 @@ export default function Dashboard({ event }: { event: string }) {
   return (
     <div className="mt-6">
       <div className="rounded-xl border border-line bg-surface p-5">
-        <p className="font-serif text-2xl">
-          <span className="text-5xl font-bold tabular-nums text-pine">{data.checkedIn}</span> of{' '}
+        <p className="text-2xl">
+          <span className="text-5xl font-bold tabular-nums text-primary">{data.checkedIn}</span> of{' '}
           <span className="tabular-nums">{data.total}</span> tickets checked in
         </p>
         <div
@@ -93,7 +93,7 @@ export default function Dashboard({ event }: { event: string }) {
           aria-valuemin={0}
           aria-valuemax={100}
         >
-          <div className="h-full bg-pine" style={{ width: `${pct}%` }} />
+          <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
         </div>
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
           <Stat label="Named tickets" value={data.named} />
@@ -107,7 +107,7 @@ export default function Dashboard({ event }: { event: string }) {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_2fr]">
         <section aria-labelledby="by-staff">
-          <h2 id="by-staff" className="font-serif text-xl font-semibold">
+          <h2 id="by-staff" className="text-xl font-semibold">
             Check-ins by staff
           </h2>
           {data.perStaff.length === 0 ? (
@@ -127,7 +127,7 @@ export default function Dashboard({ event }: { event: string }) {
         </section>
 
         <section aria-labelledby="recent">
-          <h2 id="recent" className="font-serif text-xl font-semibold">
+          <h2 id="recent" className="text-xl font-semibold">
             Recent scans
           </h2>
           {data.recent.length === 0 ? (

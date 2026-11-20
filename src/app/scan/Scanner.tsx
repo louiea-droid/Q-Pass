@@ -1,13 +1,17 @@
 'use client'
 
 import type { Html5Qrcode } from 'html5-qrcode'
+import Link from 'next/link'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { manualScanAction, scanAction, setNameAction } from '../actions'
-import type { ScanOutcome } from '@/lib/types'
+import { signOutAction } from '../signin/actions'
+import { headline } from '@/lib/display'
+import type { ScanOutcome, Staff } from '@/lib/types'
 
 const EVENT_KEY = 'tac-scan-event'
 const COOLDOWN_MS = 2000
 const SAME_CODE_MS = 5000
+const COUNT_POLL_MS = 15_000
 
 const fmtTime = (iso?: string) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '')
 
@@ -20,23 +24,44 @@ const readSaved = () => {
 }
 const noSubscribe = () => () => {}
 
-export default function Scanner({ events }: { events: string[] }) {
+export default function Scanner({ events, staff }: { events: string[]; staff: Staff }) {
   const [chosen, setChosen] = useState<string | null>(null)
   // The event chosen last time on this phone (empty on the server).
   const saved = useSyncExternalStore(noSubscribe, readSaved, () => '')
   const event = chosen ?? (events.includes(saved) ? saved : events.length === 1 ? events[0] : '')
   const [outcome, setOutcome] = useState<ScanOutcome | null>(null)
   const [busy, setBusy] = useState(false)
+  const [paused, setPaused] = useState(false)
   const [error, setError] = useState('')
   const [cameraError, setCameraError] = useState('')
-  const lock = useRef({ busy: false, last: '', lastAt: 0 })
+  const [typing, setTyping] = useState(false)
+  const [count, setCount] = useState<number | null>(null)
+  const lock = useRef({ busy: false, paused: false, last: '', lastAt: 0 })
 
   function chooseEvent(name: string) {
     setChosen(name)
     setCameraError('')
     setOutcome(null)
+    setCount(null)
+    resume()
     try {
       localStorage.setItem(EVENT_KEY, name)
+    } catch {}
+  }
+
+  function resume() {
+    lock.current.paused = false
+    lock.current.last = '' // the same ticket may be scanned again on purpose
+    setPaused(false)
+    setOutcome(null)
+    setError('')
+  }
+
+  async function refreshCount() {
+    if (!event) return
+    try {
+      const r = await fetch(`/api/count?event=${encodeURIComponent(event)}`, { cache: 'no-store' })
+      if (r.ok) setCount((await r.json()).checkedIn)
     } catch {}
   }
 
@@ -44,10 +69,17 @@ export default function Scanner({ events }: { events: string[] }) {
     lock.current.busy = true
     setBusy(true)
     setError('')
+    setTyping(false)
     try {
       const o = await action()
       setOutcome(o)
-      navigator.vibrate?.(o.result === 'checked_in' ? 80 : [60, 60, 60])
+      const ok = o.result === 'checked_in'
+      navigator.vibrate?.(ok ? 80 : [60, 60, 60])
+      // A warning stops the line: the volunteer must tap "Next person" before the camera scans again.
+      if (!ok) {
+        lock.current.paused = true
+        setPaused(true)
+      } else refreshCount()
     } catch {
       setOutcome(null)
       setError('Couldn’t save that scan. Check the internet connection and scan again.')
@@ -57,6 +89,24 @@ export default function Scanner({ events }: { events: string[] }) {
       setTimeout(() => (lock.current.busy = false), COOLDOWN_MS)
     }
   }
+
+  // Live count of people checked in, for everyone at the door.
+  useEffect(() => {
+    if (!event) return
+    let stop = false
+    const tick = async () => {
+      try {
+        const r = await fetch(`/api/count?event=${encodeURIComponent(event)}`, { cache: 'no-store' })
+        if (r.ok && !stop) setCount((await r.json()).checkedIn)
+      } catch {}
+    }
+    tick()
+    const id = setInterval(tick, COUNT_POLL_MS)
+    return () => {
+      stop = true
+      clearInterval(id)
+    }
+  }, [event])
 
   // Camera: runs while an event is selected.
   useEffect(() => {
@@ -73,7 +123,7 @@ export default function Scanner({ events }: { events: string[] }) {
           { fps: 10, qrbox: (w, h) => ({ width: Math.min(w, h) * 0.7, height: Math.min(w, h) * 0.7 }) },
           (text) => {
             const l = lock.current
-            if (l.busy || (text === l.last && Date.now() - l.lastAt < SAME_CODE_MS)) return
+            if (l.busy || l.paused || (text === l.last && Date.now() - l.lastAt < SAME_CODE_MS)) return
             l.last = text
             l.lastAt = Date.now()
             run(() => scanAction(event, text))
@@ -86,97 +136,209 @@ export default function Scanner({ events }: { events: string[] }) {
         if (stopped && qr?.isScanning) qr.stop().catch(() => {})
       })
       .catch(() => {
-        if (!stopped)
-          setCameraError('Camera is blocked or unavailable. Allow camera access for this site, or type ticket numbers below.')
+        if (!stopped) setCameraError('Camera is blocked or unavailable. Allow camera access for this site, or type ticket numbers below.')
       })
     return () => {
       stopped = true
       if (qr?.isScanning) qr.stop().then(() => qr?.clear()).catch(() => {})
     }
+    // Restart the camera only when the event changes; `run` reads live state through refs and setters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event])
 
-  if (events.length === 0)
-    return (
-      <section className="mx-auto max-w-md">
-        <h1 className="font-serif text-2xl font-semibold">No open events</h1>
-        <p className="mt-2 text-muted">Ask an admin to create or reopen an event, then reload this page.</p>
-      </section>
-    )
-
   return (
-    <section className="mx-auto max-w-md">
-      <div className="flex items-center gap-3">
-        <label htmlFor="event" className="shrink-0 font-semibold">
-          Event
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
+      <header className="flex items-center gap-2.5 border-b border-line bg-surface px-4 pt-4 pb-3">
+        <label className="relative flex h-11 min-w-0 flex-1 items-center rounded-xl border border-line-strong bg-surface">
+          <span className="sr-only">Event</span>
+          <span className="pointer-events-none absolute left-3.5 size-2 rounded-full bg-gold" aria-hidden="true" />
+          <select
+            value={event}
+            onChange={(e) => chooseEvent(e.target.value)}
+            className="h-full w-full min-w-0 appearance-none truncate rounded-xl bg-transparent pr-9 pl-8 text-[15px] font-semibold text-ink"
+          >
+            <option value="" disabled>
+              {events.length ? 'Choose the event' : 'No open events'}
+            </option>
+            {events.map((n) => (
+              <option key={n}>{n}</option>
+            ))}
+          </select>
+          <svg className="pointer-events-none absolute right-3 text-muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </label>
-        <select
-          id="event"
-          value={event}
-          onChange={(e) => chooseEvent(e.target.value)}
-          className="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-2"
-        >
-          <option value="" disabled>
-            Choose the event you’re scanning for
-          </option>
-          {events.map((n) => (
-            <option key={n}>{n}</option>
-          ))}
-        </select>
-      </div>
+        <details className="relative">
+          <summary
+            aria-label={`Signed in as ${staff.name}. Open menu`}
+            className="flex size-11 list-none items-center justify-center rounded-full bg-primary text-base font-bold text-primary-ink [&::-webkit-details-marker]:hidden"
+          >
+            {staff.name.trim().charAt(0).toUpperCase() || '?'}
+          </summary>
+          <div className="absolute right-0 z-20 mt-2 flex w-60 flex-col gap-1 rounded-2xl border border-line bg-surface p-2 shadow-lg">
+            <p className="px-3 py-2 text-sm text-muted">
+              Signed in as <strong className="text-ink">{staff.name}</strong>
+            </p>
+            {staff.role === 'admin' && (
+              <Link href="/admin" className="rounded-xl px-3 py-3 font-semibold hover:bg-soft">
+                Check-in desk
+              </Link>
+            )}
+            <form action={signOutAction}>
+              <button className="w-full rounded-xl px-3 py-3 text-left font-semibold hover:bg-soft">Sign out</button>
+            </form>
+          </div>
+        </details>
+      </header>
 
-      {event && (
+      {!event ? (
+        <section className="flex flex-1 flex-col gap-3 px-6 pt-10">
+          <h1 className="text-2xl font-extrabold">{events.length ? 'Which event are you scanning for?' : 'No open events'}</h1>
+          <p className="text-muted">
+            {events.length
+              ? 'Pick it from the list at the top. This phone remembers it next time.'
+              : 'Ask an admin to create or reopen an event, then reload this page.'}
+          </p>
+        </section>
+      ) : (
         <>
-          <div id="reader" className="mt-4 aspect-square w-full overflow-hidden rounded-xl bg-black" />
+          <div className="flex items-baseline justify-between px-5 pt-3.5 pb-2.5 text-sm text-muted">
+            <span className="font-semibold">Scanning as {staff.name}</span>
+            <span aria-live="polite">
+              <strong className="text-lg text-ink tabular-nums">{count ?? '…'}</strong> checked in
+            </span>
+          </div>
+
+          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#12142a] ${outcome || error ? 'h-56' : 'h-80'} transition-[height] duration-300`}>
+            <div id="reader" className="size-full [&_video]:size-full [&_video]:object-cover" />
+            <svg className={`pointer-events-none absolute inset-0 m-auto ${paused ? 'opacity-40' : ''}`} width="170" height="170" viewBox="0 0 200 200" fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" aria-hidden="true">
+              <path d="M8 48V20a12 12 0 0 1 12-12h28M152 8h28a12 12 0 0 1 12 12v28M192 152v28a12 12 0 0 1-12 12h-28M48 192H20a12 12 0 0 1-12-12v-28" />
+            </svg>
+            <p className="absolute inset-x-0 bottom-3.5 text-center text-sm text-[#c9cce0]">
+              {paused ? 'Paused. Tap “Next person” to scan again' : 'Hold the QR code inside the frame'}
+            </p>
+          </div>
+
           {cameraError && (
-            <p role="alert" className="mt-3 rounded-md border border-bad p-3 text-sm text-bad">
+            <p role="alert" className="mx-4 mt-3 rounded-xl border border-bad p-3 text-sm text-bad">
               {cameraError}
             </p>
           )}
 
-          <div aria-live="polite" className="mt-4">
-            {busy && <p className="rounded-xl bg-surface p-5 text-lg">Checking…</p>}
+          <div aria-live="polite" className="mx-4 mt-4">
+            {busy && <p className="rounded-3xl bg-surface p-6 text-lg font-semibold">Checking…</p>}
             {!busy && error && (
-              <p role="alert" className="rounded-xl bg-bad p-5 text-lg font-semibold text-on-flag">
+              <p role="alert" className="rounded-3xl bg-bad p-6 text-lg font-semibold text-on-flag">
                 {error}
               </p>
             )}
             {!busy && outcome && <Result outcome={outcome} event={event} />}
-            {!busy && !outcome && !error && <p className="text-muted">Point the camera at a ticket’s QR code.</p>}
           </div>
 
-          <ManualEntry disabled={busy} onSubmit={(t) => run(() => manualScanAction(event, t))} />
+          <div className="flex-1" />
+
+          <div className="sticky bottom-0 border-t border-line bg-surface p-4">
+            {typing ? (
+              <ManualEntry
+                disabled={busy}
+                onCancel={() => setTyping(false)}
+                onSubmit={(t) => {
+                  resume()
+                  run(() => manualScanAction(event, t))
+                }}
+              />
+            ) : paused ? (
+              <div className="flex gap-2.5">
+                <KeypadButton iconOnly onClick={() => setTyping(true)} />
+                <button
+                  onClick={resume}
+                  className="h-14 flex-1 rounded-2xl bg-primary text-[17px] font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover"
+                >
+                  Next person
+                </button>
+              </div>
+            ) : (
+              <KeypadButton onClick={() => setTyping(true)} />
+            )}
+          </div>
         </>
       )}
-    </section>
+    </div>
   )
 }
 
-function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
-  const ok = outcome.result === 'checked_in'
+function KeypadButton({ onClick, iconOnly = false }: { onClick: () => void; iconOnly?: boolean }) {
   return (
-    <div className={`rounded-xl p-5 text-on-flag ${ok ? 'bg-ok' : 'bg-bad'}`}>
-      <p className="text-sm font-semibold opacity-90">{ok ? 'Checked in' : 'Not checked in'}</p>
-      {outcome.ticket && <p className="font-serif text-5xl font-bold tabular-nums">{outcome.ticket}</p>}
-      <p className="mt-1 text-2xl font-semibold wrap-anywhere">
-        {outcome.result === 'already_checked_in' ? outcome.name || 'No name' : outcome.message}
-      </p>
-      {outcome.result === 'already_checked_in' && (
-        <p className="mt-1">
-          Already checked in at {fmtTime(outcome.checkedInAt)} by {outcome.checkedInBy || 'unknown'}
-        </p>
-      )}
-      {ok && !outcome.name && outcome.ticket && <AddName event={event} ticket={outcome.ticket} />}
-    </div>
+    <button
+      onClick={onClick}
+      aria-label={iconOnly ? 'Type a ticket number' : undefined}
+      className={`flex h-14 items-center justify-center gap-2.5 rounded-2xl border-[1.5px] border-primary bg-surface text-[17px] font-bold text-primary transition-colors duration-200 hover:bg-soft ${iconOnly ? 'w-14 shrink-0' : 'w-full'}`}
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="4" y="2" width="16" height="20" rx="2" />
+        <path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h8" />
+      </svg>
+      {!iconOnly && 'Type a ticket number'}
+    </button>
+  )
+}
+
+const REJECT_TITLE: Record<string, string> = {
+  already_checked_in: 'Already used. Don’t let in yet',
+  wrong_event: 'Ticket for a different event',
+  event_closed: 'This event is closed',
+  not_found: 'Not a valid ticket',
+}
+
+function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
+  if (outcome.result === 'checked_in')
+    return (
+      <section className="flex flex-col gap-1.5 rounded-3xl bg-ok p-5.5 text-on-flag">
+        <span className="flex items-center gap-2.5 text-lg font-bold">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <path d="m8 12 3 3 5-6" />
+          </svg>
+          Welcome! Checked in
+        </span>
+        <span className="text-3xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
+        {outcome.name && <span className="text-base text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
+        {!outcome.name && outcome.ticket && <AddName event={event} ticket={outcome.ticket} />}
+      </section>
+    )
+
+  const used = outcome.result === 'already_checked_in'
+  return (
+    <section role="alert" className="flex flex-col gap-2 rounded-3xl bg-bad p-5.5 text-on-flag">
+      <span className="flex items-center gap-2.5 text-lg font-bold">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 7v6M12 17h.01" />
+        </svg>
+        {REJECT_TITLE[outcome.result] ?? 'Not checked in'}
+      </span>
+      {outcome.ticket ? (
+        <span className="text-3xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
+      ) : null}
+      <span className="text-base leading-relaxed text-[#ffe1dd]">
+        {used
+          ? `${outcome.name ? `Ticket ${outcome.ticket} was` : 'It was'} checked in at ${fmtTime(outcome.checkedInAt)} by ${outcome.checkedInBy || 'someone'}.`
+          : outcome.message}
+      </span>
+      <span className="mt-1.5 border-t border-white/25 pt-3 text-[15px] leading-relaxed">
+        Ask for an ID, or call an admin if this looks wrong.
+      </span>
+    </section>
   )
 }
 
 function AddName({ event, ticket }: { event: string; ticket: string }) {
   const [name, setName] = useState('')
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  if (state === 'saved') return <p className="mt-3 font-semibold">Saved {name} to ticket {ticket}.</p>
+  if (state === 'saved') return <p className="mt-2 font-semibold">Saved {name} to ticket {ticket}.</p>
   return (
     <form
-      className="mt-3 flex flex-wrap gap-2"
+      className="mt-2 flex flex-wrap gap-2"
       onSubmit={async (e) => {
         e.preventDefault()
         if (!name.trim()) return
@@ -194,52 +356,56 @@ function AddName({ event, ticket }: { event: string; ticket: string }) {
       </label>
       <input
         id="add-name"
-        name="name"
         autoComplete="off"
         placeholder="Add a name (optional)"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="min-w-0 flex-1 rounded-md bg-surface px-3 py-2 text-ink"
+        className="h-12 min-w-0 flex-1 rounded-xl bg-surface px-3 text-base text-ink"
       />
-      <button disabled={state === 'saving'} className="rounded-md bg-surface px-4 py-2 font-semibold text-ink disabled:opacity-60">
-        {state === 'saving' ? 'Saving…' : 'Save name'}
+      <button disabled={state === 'saving'} className="h-12 rounded-xl bg-surface px-4 font-bold text-ink disabled:opacity-60">
+        {state === 'saving' ? 'Saving…' : 'Save'}
       </button>
-      {state === 'error' && <span role="alert" className="basis-full text-sm font-semibold">Couldn’t save the name. Try again.</span>}
+      {state === 'error' && (
+        <span role="alert" className="basis-full text-sm font-semibold">
+          Couldn’t save the name. Try again.
+        </span>
+      )}
     </form>
   )
 }
 
-function ManualEntry({ disabled, onSubmit }: { disabled: boolean; onSubmit: (ticket: string) => void }) {
+function ManualEntry({ disabled, onSubmit, onCancel }: { disabled: boolean; onSubmit: (t: string) => void; onCancel: () => void }) {
   const [value, setValue] = useState('')
   return (
     <form
-      className="mt-6 border-t border-line pt-4"
       onSubmit={(e) => {
         e.preventDefault()
-        if (!value.trim()) return
-        onSubmit(value)
-        setValue('')
+        if (value.trim()) onSubmit(value)
       }}
+      className="flex flex-col gap-2"
     >
-      <label htmlFor="manual" className="font-semibold">
-        QR won’t scan? Type the ticket number
+      <label htmlFor="manual" className="font-bold">
+        Ticket number
       </label>
-      <div className="mt-2 flex gap-2">
+      <div className="flex gap-2">
         <input
           id="manual"
-          name="ticket"
+          autoFocus
           inputMode="numeric"
           autoComplete="off"
           pattern="[0-9]{1,4}"
           placeholder="0057"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          className="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-2 text-lg tabular-nums"
+          className="h-14 min-w-0 flex-1 rounded-xl border-[1.5px] border-line-strong bg-surface px-4 text-xl font-semibold tabular-nums"
         />
-        <button disabled={disabled} className="rounded-md bg-pine px-5 py-2 font-semibold text-pine-ink disabled:opacity-60">
+        <button disabled={disabled} className="h-14 rounded-2xl bg-primary px-5 font-bold text-primary-ink hover:bg-primary-hover disabled:opacity-60">
           Check in
         </button>
       </div>
+      <button type="button" onClick={onCancel} className="h-11 rounded-xl font-semibold text-muted hover:bg-soft">
+        Back to camera
+      </button>
     </form>
   )
 }

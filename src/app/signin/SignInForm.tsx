@@ -3,30 +3,31 @@
 import { useActionState } from 'react'
 import { signInAction } from './actions'
 
-const input = 'mt-1 w-full rounded-lg border border-line bg-surface px-3 py-3 text-lg'
+const input =
+  'h-14 w-full rounded-xl border-[1.5px] border-line-strong bg-surface px-4 text-lg font-medium text-ink focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none'
 
 export default function SignInForm() {
   const [state, action, pending] = useActionState(signInAction, {})
   return (
-    <form action={action} className="mt-8 space-y-4">
-      <label className="block font-semibold">
+    <form action={action} className="flex flex-col gap-4.5">
+      <label className="flex flex-col gap-2 font-bold">
         Your name
-        <input name="name" required autoComplete="name" maxLength={60} placeholder="Ana" defaultValue={state.name} className={input} />
+        <input name="name" required autoComplete="name" maxLength={60} defaultValue={state.name} className={input} />
       </label>
-      <label className="block font-semibold">
+      <label className="flex flex-col gap-2 font-bold">
         Passcode
         <input name="passcode" type="password" required autoComplete="current-password" className={input} />
       </label>
       {state.error && (
-        <p role="alert" className="text-bad">
+        <p role="alert" className="font-medium text-bad">
           {state.error}
         </p>
       )}
       <button
         disabled={pending}
-        className="w-full rounded-lg bg-pine px-4 py-3 text-lg font-semibold text-pine-ink hover:opacity-90 disabled:opacity-60"
+        className="mt-1.5 h-14 rounded-2xl bg-primary text-lg font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover disabled:opacity-60"
       >
-        {pending ? 'Signing in…' : 'Sign in'}
+        {pending ? 'Signing in…' : 'Start checking in'}
       </button>
     </form>
   )

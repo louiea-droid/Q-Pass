@@ -13,9 +13,9 @@ export default async function AdminHome({ searchParams }: PageProps<'/admin'>) {
   if (events.length === 0)
     return (
       <section>
-        <h1 className="font-serif text-3xl font-semibold">No events yet</h1>
+        <h1 className="text-3xl font-semibold">No events yet</h1>
         <p className="mt-2 text-muted">Create your first event to get its ticket list and QR codes.</p>
-        <Link href="/admin/events" className="mt-4 inline-block rounded-lg bg-pine px-4 py-2 font-semibold text-pine-ink">
+        <Link href="/admin/events" className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 font-semibold text-primary-ink">
           Create an event
         </Link>
       </section>
@@ -25,7 +25,7 @@ export default async function AdminHome({ searchParams }: PageProps<'/admin'>) {
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-serif text-3xl font-semibold">Check-in</h1>
+        <h1 className="text-3xl font-semibold">Check-in</h1>
         <EventPicker events={events.map((e) => e.name)} value={event} />
       </div>
       <Dashboard key={event} event={event} />

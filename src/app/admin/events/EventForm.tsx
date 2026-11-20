@@ -40,7 +40,7 @@ export function CreateEventForm() {
         })
       }}
     >
-      <h2 className="font-serif text-xl font-semibold">New event</h2>
+      <h2 className="text-xl font-semibold">New event</h2>
       <label className="mt-3 block text-sm font-semibold">
         Event name
         <input
@@ -85,7 +85,7 @@ export function CreateEventForm() {
       </div>
       <button
         disabled={pending || !!nameProblem || !name.trim()}
-        className="mt-4 w-full rounded-lg bg-pine px-4 py-2 font-semibold text-pine-ink disabled:opacity-60"
+        className="mt-4 w-full rounded-lg bg-primary px-4 py-2 font-semibold text-primary-ink disabled:opacity-60"
       >
         {pending ? 'Creating tickets…' : 'Create event'}
       </button>
@@ -136,7 +136,7 @@ export function EditEvent({ event }: { event: EventInfo }) {
           <textarea name="details" rows={2} defaultValue={event.details} className={input} />
         </label>
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-          <button disabled={pending} className="rounded-md bg-pine px-4 py-2 font-semibold text-pine-ink disabled:opacity-60">
+          <button disabled={pending} className="rounded-md bg-primary px-4 py-2 font-semibold text-primary-ink disabled:opacity-60">
             {pending ? 'Saving…' : 'Save details'}
           </button>
           <button

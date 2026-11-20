@@ -1,5 +1,8 @@
 import { ensureSchema } from '@/lib/store'
+import Logo from '../Logo'
 import SignInForm from './SignInForm'
+
+export const metadata = { title: 'Sign in · TAC Check-in' }
 
 export default async function SignIn() {
   // Checks the database connection (and, in Sheet mode, creates the Events and Log tabs).
@@ -8,15 +11,21 @@ export default async function SignIn() {
     (e: Error) => e.message,
   )
   return (
-    <section className="mx-auto mt-12 max-w-sm">
-      <h1 className="font-serif text-3xl font-semibold">Sign in to check people in</h1>
-      <p className="mt-3 text-muted">Use the passcode your admin gave you. Your name is recorded with each check-in.</p>
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-7 px-6 pt-16 pb-8">
+      <div className="flex flex-col gap-3.5">
+        <Logo />
+        <h1 className="text-3xl font-extrabold">Welcome</h1>
+        <p className="text-[17px] leading-relaxed text-muted">Type your name and the passcode from your team leader.</p>
+      </div>
       {setupError && (
-        <p role="alert" className="mt-4 rounded-md border border-bad p-3 text-sm text-bad">
+        <p role="alert" className="rounded-xl border border-bad p-3 text-sm text-bad">
           Can’t reach the database: {setupError}. Check the app’s settings (see README).
         </p>
       )}
       <SignInForm />
-    </section>
+      <p className="mt-auto rounded-xl bg-note p-4 text-[15px] leading-relaxed text-note-ink">
+        Your name appears next to every person you check in, so the team knows who helped whom.
+      </p>
+    </main>
   )
 }

@@ -50,8 +50,8 @@ export default function PeopleTable({ event, tickets, readOnly }: { event: strin
           {FILTERS.map((f) => (
             <label
               key={f.id}
-              className={`cursor-pointer rounded-md border px-3 py-2 text-sm has-focus-visible:outline-3 has-focus-visible:outline-wheat ${
-                filter === f.id ? 'border-pine bg-pine text-pine-ink' : 'border-line bg-surface'
+              className={`cursor-pointer rounded-md border px-3 py-2 text-sm has-focus-visible:outline-3 has-focus-visible:outline-gold ${
+                filter === f.id ? 'border-primary bg-primary text-primary-ink' : 'border-line bg-surface'
               }`}
             >
               <input
@@ -158,7 +158,7 @@ function Row({ event, t, readOnly, onStatus }: { event: string; t: Ticket; readO
             <button
               disabled={pending}
               onClick={() => act(() => updateTicketAction(event, t.ticket, draft), `Saved ticket ${t.ticket}.`)}
-              className="rounded bg-pine px-3 py-1 font-semibold text-pine-ink disabled:opacity-60"
+              className="rounded bg-primary px-3 py-1 font-semibold text-primary-ink disabled:opacity-60"
             >
               {pending ? 'Saving…' : 'Save'}
             </button>
@@ -224,7 +224,7 @@ function Row({ event, t, readOnly, onStatus }: { event: string; t: Ticket; readO
               <button
                 disabled={pending}
                 onClick={() => act(() => manualCheckInAction(event, t.ticket), `Checked in ${label}.`)}
-                className="rounded bg-pine px-3 py-1 font-semibold text-pine-ink disabled:opacity-60"
+                className="rounded bg-primary px-3 py-1 font-semibold text-primary-ink disabled:opacity-60"
                 aria-label={`Check in ${label}`}
               >
                 {pending ? 'Checking in…' : 'Check in'}
