@@ -37,6 +37,10 @@ create table if not exists log (
 create index if not exists log_event_id on log (event, id desc);
 
 -- Only the app's server (service_role key) may read or write. Browsers using the public key get nothing.
+-- Newer Supabase projects don't grant table access automatically, so grant it to the server role only.
+grant select, insert, update, delete on events, tickets, log to service_role;
+grant usage, select on all sequences in schema public to service_role;
+revoke all on events, tickets, log from anon, authenticated;
 alter table events  enable row level security;
 alter table tickets enable row level security;
 alter table log     enable row level security;
