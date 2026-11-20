@@ -1,6 +1,7 @@
 'use server'
 
 import { requireStaff } from '@/lib/guard'
+import { planGive } from '@/lib/groups'
 import { normalizeTicket } from '@/lib/qr'
 import { checkIn, createEvent, getEvent, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
 import type { EventInfo, ScanOutcome } from '@/lib/types'
@@ -84,4 +85,31 @@ export async function updateEventAction(name: string, patch: Partial<Omit<EventI
   await requireStaff('admin')
   const { date, venue, details, status } = patch // range and name are locked after creation
   return attempt(() => updateEvent(name, { date, venue, details, status }))
+}
+
+/** Give `count` tickets from `start` to one person (e.g. a family). Refuses if any is someone else's. */
+export async function giveTicketsAction(
+  event: string,
+  start: string,
+  count: number,
+  name: string,
+  info: string,
+): Promise<ActionResult & { given?: string[] }> {
+  await requireStaff('admin')
+  const who = name.trim()
+  const first = normalizeTicket(start)
+  if (!who) return { error: 'Type the name of the person receiving the tickets.' }
+  if (!first) return { error: 'Type the first ticket number, like 0010.' }
+  if (!Number.isInteger(count) || count < 1 || count > 50) return { error: 'Give between 1 and 50 tickets at a time.' }
+  try {
+    await requireOpenEvent(event)
+    const plan = planGive(await listTickets(event), first, count, who)
+    if (plan.missing.length) return { error: `This event has no ticket ${plan.missing[0]}. Pick an earlier start.` }
+    if (plan.taken.length)
+      return { error: `Already given: ${plan.taken.map((t) => `${t.ticket} (${t.name})`).join(', ')}. Pick other numbers.` }
+    await Promise.all(plan.tickets.map((t) => updateTicket(event, t, { name: who, ...(info.trim() && { info: info.trim() }) })))
+    return { given: plan.tickets }
+  } catch (e) {
+    return { error: (e as Error).message || 'Something went wrong. Try again.' }
+  }
 }

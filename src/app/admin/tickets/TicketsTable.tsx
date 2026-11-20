@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { updateTicketAction } from '../../actions'
 import Pager from '../Pager'
+import GiveTickets from './GiveTickets'
+import { groupCounts, groupKey } from '@/lib/groups'
 import { isGiven, matchTicket, type TicketFilter } from '@/lib/display'
 import type { Ticket } from '@/lib/types'
 
 type Fields = { name: string; info: string; notes: string }
 type Col = keyof Fields
 type RowState = 'saving' | 'saved' | 'error'
-
 
 const COLS: { key: Col; label: string; width: string; hint: string }[] = [
   { key: 'name', label: 'Name', width: 'min-w-56', hint: 'Add a name' },
@@ -43,6 +44,22 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
   const current = Math.min(page, pages - 1)
   const shown = matches.slice(current * size, current * size + size)
   const given = rows.filter(isGiven).length
+  const groups = groupCounts(rows)
+
+  // After "Give tickets": show the new names at once, already saved.
+  function given_(numbers: string[], name: string, info: string) {
+    const apply = (x: Record<string, Fields>) => {
+      const next = { ...x }
+      for (const n of numbers) next[n] = { ...next[n], name, ...(info && { info }) }
+      return next
+    }
+    setDraft(apply)
+    setSaved(apply)
+    setRowState((x) => ({ ...x, ...Object.fromEntries(numbers.map((n) => [n, 'saved' as const])) }))
+    setQuery(name)
+    setFilter('all')
+    setPage(0)
+  }
 
   async function save(ticket: string) {
     const d = draft[ticket], s = saved[ticket]
@@ -85,6 +102,8 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
         </p>
         {readOnly && <p className="rounded-lg bg-note px-3 py-1.5 text-sm text-note-ink">This event is closed, so tickets are read-only.</p>}
       </div>
+
+      {!readOnly && <GiveTickets event={event} rows={rows} onGiven={given_} />}
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-0 flex-[1_1_260px]">
@@ -196,7 +215,12 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                           Not saved
                         </span>
                       ) : isGiven(t) ? (
-                        <span className="rounded-full bg-ok/10 px-2.5 py-0.5 text-[13px] font-bold text-ok-text">Given</span>
+                        <span className="flex flex-wrap items-center gap-1.5">
+                          <span className="rounded-full bg-ok/10 px-2.5 py-0.5 text-[13px] font-bold text-ok-text">Given</span>
+                          {(groups.get(groupKey(t.name))?.total ?? 0) > 1 && (
+                            <span className="text-[13px] text-muted">group of {groups.get(groupKey(t.name))!.total}</span>
+                          )}
+                        </span>
                       ) : (
                         <span className="rounded-full bg-soft px-2.5 py-0.5 text-[13px] font-semibold text-muted">Not given</span>
                       )}

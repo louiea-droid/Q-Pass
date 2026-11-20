@@ -303,6 +303,7 @@ function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
         </span>
         <span className="text-3xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
         {outcome.name && <span className="text-base text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
+        {outcome.group && <GroupLine group={outcome.group} />}
         {!outcome.name && outcome.ticket && <AddName event={event} ticket={outcome.ticket} />}
       </section>
     )
@@ -325,10 +326,25 @@ function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
           ? `${outcome.name ? `Ticket ${outcome.ticket} was` : 'It was'} checked in at ${fmtTime(outcome.checkedInAt)} by ${outcome.checkedInBy || 'someone'}.`
           : outcome.message}
       </span>
+      {outcome.group && <GroupLine group={outcome.group} />}
       <span className="mt-1.5 border-t border-white/25 pt-3 text-[15px] leading-relaxed">
         Ask for an ID, or call an admin if this looks wrong.
       </span>
     </section>
+  )
+}
+
+/** "2 of 5 in this group are here": the rest of the family is still to come. */
+function GroupLine({ group }: { group: { total: number; here: number } }) {
+  return (
+    <span className="mt-1 flex items-center gap-2 rounded-xl bg-white/15 px-3 py-2 text-base font-semibold">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+      {group.here} of {group.total} in this group are here
+    </span>
   )
 }
 

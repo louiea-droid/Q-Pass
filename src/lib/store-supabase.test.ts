@@ -128,3 +128,25 @@ test('SUPABASE_URL copied with /rest/v1/ on the end still works', async () => {
   await listEvents()
   expect(reqs.at(-1)!.path).toBe('events')
 })
+
+test('a check-in for someone holding several tickets reports how many of the group are here', async () => {
+  rpc.check_in = () => row('0001', { name: 'Juan' })
+  tickets = [
+    row('0001', { name: 'Juan', checked_in_at: '2026-11-26T09:00:00+00:00' }),
+    row('0002', { name: 'juan', checked_in_at: '2026-11-26T09:00:30+00:00' }),
+    row('0003', { name: 'Juan' }),
+    row('0004', { name: 'Ana' }),
+  ]
+  const { checkIn } = await import('./store')
+  const r = await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
+  expect(r).toMatchObject({ result: 'checked_in', name: 'Juan', group: { total: 3, here: 2 } })
+})
+
+test('a single-ticket guest has no group line, and a failed group lookup never blocks the check-in', async () => {
+  rpc.check_in = () => row('0004', { name: 'Ana' })
+  tickets = [row('0004', { name: 'Ana', checked_in_at: '2026-11-26T09:00:00+00:00' })]
+  const { checkIn } = await import('./store')
+  const r = await checkIn({ payload: 'TAC Gala-0004', event: 'TAC Gala', staff, method: 'QR' })
+  expect(r.result).toBe('checked_in')
+  expect(r.group).toBeUndefined()
+})

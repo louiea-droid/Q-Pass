@@ -6,6 +6,7 @@ import { manualCheckInAction, undoCheckInAction, updateTicketAction } from '../a
 import { headline, matchTicket, type TicketFilter } from '@/lib/display'
 import type { Ticket } from '@/lib/types'
 import Pager from './Pager'
+import { groupCounts, groupKey } from '@/lib/groups'
 
 type Filter = TicketFilter
 const FILTERS: { id: Filter; label: string }[] = [
@@ -25,6 +26,7 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
 
   const q = query.trim().toLowerCase()
   const matches = tickets.filter((t) => matchTicket(t, query, filter))
+  const groups = groupCounts(tickets)
   // The list refreshes as people arrive; stay on a page that still exists.
   const current = Math.min(page, Math.max(0, Math.ceil(matches.length / size) - 1))
   const shown = matches.slice(current * size, current * size + size)
@@ -88,7 +90,7 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
       ) : (
         <ul className="flex flex-col gap-2">
           {shown.map((t) => (
-            <Guest key={t.ticket} event={event} t={t} readOnly={readOnly} onStatus={setStatus} />
+            <Guest key={t.ticket} event={event} t={t} group={groups.get(groupKey(t.name))} readOnly={readOnly} onStatus={setStatus} />
           ))}
         </ul>
       )}
@@ -113,7 +115,19 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
   )
 }
 
-function Guest({ event, t, readOnly, onStatus }: { event: string; t: Ticket; readOnly: boolean; onStatus: (s: string) => void }) {
+function Guest({
+  event,
+  t,
+  group,
+  readOnly,
+  onStatus,
+}: {
+  event: string
+  t: Ticket
+  group?: { total: number; here: number }
+  readOnly: boolean
+  onStatus: (s: string) => void
+}) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState({ name: t.name, info: t.info, notes: t.notes })
@@ -185,6 +199,11 @@ function Guest({ event, t, readOnly, onStatus }: { event: string; t: Ticket; rea
       <span className="flex min-w-0 flex-[1_1_180px] flex-col gap-0.5">
         <span className={`text-[15px] wrap-anywhere ${t.name ? 'font-bold' : 'font-medium text-muted'}`}>
           {t.name || 'No name yet'}
+          {group && group.total > 1 && (
+            <span className="ml-2 rounded-full bg-soft px-2 py-0.5 align-middle text-xs font-semibold text-muted">
+              Group of {group.total}, {group.here} here
+            </span>
+          )}
         </span>
         <span className={`text-[13px] ${t.checkedInAt ? 'font-semibold text-ok-text' : 'text-muted'}`}>
           {t.checkedInAt

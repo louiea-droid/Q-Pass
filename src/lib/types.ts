@@ -47,4 +47,6 @@ export type ScanOutcome = {
   message: string
   checkedInAt?: string
   checkedInBy?: string
+  /** Set when this name holds several tickets: how many of them are checked in. */
+  group?: { total: number; here: number }
 }

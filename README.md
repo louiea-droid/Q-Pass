@@ -80,7 +80,9 @@ Moving between Supabase and the Sheet doesn't copy data across. Pick one before 
 
 ## Handing out tickets
 
-Open **Tickets**, find the ticket number you are handing over, and type the person's name (plus any details). A ticket with a name counts as **given**; clear the name to make it not given again. Press **Enter** to jump to the next ticket's name. Changes save on their own. Names are optional: a ticket with no name still works at the door.
+For a family or group, click **Give tickets**, type one name and how many tickets: it picks the next free numbers (or the ones you choose) and won't overwrite tickets already given to someone else. Tickets with the same name count as one group, and the scanner shows how many of the group are already in (for example "2 of 5 in this group are here").
+
+For single tickets, open **Tickets**, find the ticket number you are handing over, and type the person's name (plus any details). A ticket with a name counts as **given**; clear the name to make it not given again. Press **Enter** to jump to the next ticket's name. Changes save on their own. Names are optional: a ticket with no name still works at the door.
 
 ## Day before the event
 
