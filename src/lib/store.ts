@@ -63,9 +63,9 @@ async function append(sheet: string, values: string[][]) {
     }),
   )
 }
-async function addTab(title: string, headers: string[]) {
+async function addTab(title: string, headers: string[], rowCount = 1000) {
   await call(() =>
-    api().spreadsheets.batchUpdate({ spreadsheetId: spreadsheetId(), requestBody: { requests: [{ addSheet: { properties: { title } } }] } }),
+    api().spreadsheets.batchUpdate({ spreadsheetId: spreadsheetId(), requestBody: { requests: [{ addSheet: { properties: { title, gridProperties: { rowCount } } } }] } }),
   )
   await write(`${tab(title)}!A1`, [headers])
 }
@@ -108,8 +108,9 @@ export async function createEvent(e: EventInfo): Promise<void> {
   if (!from || !to || Number(from) > Number(to)) throw new Error('Ticket range must be two numbers from 0000 to 9999, first ≤ last.')
   eventsCache = undefined
   if ((await listEvents()).some((x) => x.name.toLowerCase() === name.toLowerCase())) throw new Error('An event with that name already exists.')
-  await addTab(name, TICKET_HEADERS)
-  await write(`${tab(name)}!A2`, ticketRange(from, to).map((t) => [t]))
+  const tickets = ticketRange(from, to)
+  await addTab(name, TICKET_HEADERS, tickets.length + 1) // new tabs only have 1,000 rows; writes past the grid fail
+  await write(`${tab(name)}!A2`, tickets.map((t) => [t]))
   await append('Events', [[name, e.date, e.venue, e.details, from, to, e.status]])
   eventsCache = undefined
 }
@@ -176,6 +177,7 @@ export async function checkIn(args: {
   })
   if (update && found) await write(`${tab(event.name)}!E${found.row}:G${found.row}`, [[update.checkedInAt, update.checkedInBy, update.method]])
   await log(event.name, ticketNo ?? '', outcome.result, args.staff, args.method)
+    .catch((e) => console.error('Log write failed (check-in itself was saved)', e))
   return outcome
 }
 
@@ -183,7 +185,7 @@ export async function undoCheckIn(event: string, ticket: string, staff: Staff): 
   const found = await findRow(event, ticket)
   if (!found) throw new Error('Ticket not found')
   await write(`${tab(event)}!E${found.row}:G${found.row}`, [['', '', '']])
-  await log(event, ticket, 'undone', staff, 'manual')
+  await log(event, ticket, 'undone', staff, 'manual').catch((e) => console.error('Log write failed', e))
 }
 
 export async function getDashboard(event: string): Promise<{

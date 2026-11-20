@@ -1,3 +1,4 @@
+import { requireStaff } from '@/lib/guard'
 import Link from 'next/link'
 import { listEvents } from '@/lib/store'
 import Dashboard from './Dashboard'
@@ -6,6 +7,7 @@ import EventPicker from './EventPicker'
 export const metadata = { title: 'Dashboard · TAC Check-in' }
 
 export default async function AdminHome({ searchParams }: PageProps<'/admin'>) {
+  await requireStaff('admin')
   const { event: wanted } = await searchParams
   const events = await listEvents()
   if (events.length === 0)

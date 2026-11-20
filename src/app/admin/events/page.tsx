@@ -1,3 +1,4 @@
+import { requireStaff } from '@/lib/guard'
 import Link from 'next/link'
 import { listEvents } from '@/lib/store'
 import { CreateEventForm, EditEvent } from './EventForm'
@@ -5,6 +6,7 @@ import { CreateEventForm, EditEvent } from './EventForm'
 export const metadata = { title: 'Events · TAC Check-in' }
 
 export default async function EventsPage() {
+  await requireStaff('admin')
   const events = await listEvents()
   return (
     <section className="grid gap-8 lg:grid-cols-[2fr_1fr]">

@@ -1,3 +1,4 @@
+import { requireStaff } from '@/lib/guard'
 import Link from 'next/link'
 import { listEvents, listTickets } from '@/lib/store'
 import EventPicker from '../EventPicker'
@@ -6,6 +7,7 @@ import PeopleTable from './PeopleTable'
 export const metadata = { title: 'People · TAC Check-in' }
 
 export default async function PeoplePage({ searchParams }: PageProps<'/admin/people'>) {
+  await requireStaff('admin')
   const { event: wanted } = await searchParams
   const events = await listEvents()
   if (events.length === 0)

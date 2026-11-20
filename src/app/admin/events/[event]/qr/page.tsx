@@ -1,3 +1,4 @@
+import { requireStaff } from '@/lib/guard'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getEvent } from '@/lib/store'
@@ -6,6 +7,7 @@ import QrSheet from './QrSheet'
 export const metadata = { title: 'Print QR codes · TAC Check-in' }
 
 export default async function QrPage({ params }: PageProps<'/admin/events/[event]/qr'>) {
+  await requireStaff('admin')
   const name = decodeURIComponent((await params).event)
   const event = await getEvent(name)
   if (!event) notFound()
