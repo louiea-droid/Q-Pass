@@ -25,7 +25,15 @@ export default async function PeoplePage({ searchParams }: PageProps<'/admin/peo
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-serif text-3xl font-semibold">People</h1>
-        <EventPicker events={events.map((e) => e.name)} value={event.name} />
+        <div className="flex flex-wrap items-center gap-3">
+          <EventPicker events={events.map((e) => e.name)} value={event.name} />
+          <a
+            href={`/api/export?event=${encodeURIComponent(event.name)}`}
+            className="rounded-md border border-line px-3 py-2 text-sm hover:bg-surface"
+          >
+            Download CSV
+          </a>
+        </div>
       </div>
       {event.status === 'closed' && (
         <p className="mt-3 rounded-md border border-line bg-surface p-3 text-sm">

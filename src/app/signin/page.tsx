@@ -2,7 +2,7 @@ import { ensureSchema } from '@/lib/store'
 import SignInForm from './SignInForm'
 
 export default async function SignIn() {
-  // First visit on a fresh Sheet creates the Events and Log tabs.
+  // Checks the database connection (and, in Sheet mode, creates the Events and Log tabs).
   const setupError = await ensureSchema().then(
     () => null,
     (e: Error) => e.message,
@@ -13,7 +13,7 @@ export default async function SignIn() {
       <p className="mt-3 text-muted">Use the passcode your admin gave you. Your name is recorded with each check-in.</p>
       {setupError && (
         <p role="alert" className="mt-4 rounded-md border border-bad p-3 text-sm text-bad">
-          Can’t reach the Google Sheet: {setupError}. Check the app’s settings (see README).
+          Can’t reach the database: {setupError}. Check the app’s settings (see README).
         </p>
       )}
       <SignInForm />
