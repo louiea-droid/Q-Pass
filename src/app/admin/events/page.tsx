@@ -10,6 +10,36 @@ const STEPS = ['Create the event', 'Download the QR codes', 'Scan them at the do
 const fmtDate = (d: string) =>
   d ? new Date(`${d}T00:00`).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : ''
 
+const secondaryLink =
+  'flex h-10 items-center rounded-lg border border-line-strong px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:bg-soft'
+
+/** Calendar-style date block, so events can be told apart at a glance. */
+function DateTile({ date }: { date: string }) {
+  const d = new Date(`${date}T00:00`)
+  if (isNaN(d.getTime())) return null
+  return (
+    <div aria-hidden="true" className="flex w-14 shrink-0 flex-col items-center overflow-hidden rounded-xl border border-line bg-paper">
+      <span className="w-full bg-primary py-0.5 text-center text-xs font-bold text-primary-ink">
+        {d.toLocaleDateString('en', { month: 'short' })}
+      </span>
+      <span className="pt-1 text-2xl leading-none font-extrabold tabular-nums">{d.getDate()}</span>
+      <span className="pb-1.5 text-[11px] font-semibold text-muted">{d.getFullYear()}</span>
+    </div>
+  )
+}
+
+function Meta({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2">
+      <dt className="sr-only">{label}</dt>
+      <svg className="mt-0.5 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {icon}
+      </svg>
+      <dd className="min-w-0 wrap-anywhere">{children}</dd>
+    </div>
+  )
+}
+
 export default async function EventsPage() {
   await requireStaff('admin')
   const events = await listEvents()
@@ -46,50 +76,48 @@ export default async function EventsPage() {
           const count = Number(e.ticketTo) - Number(e.ticketFrom) + 1
           const open = e.status === 'open'
           return (
-            <li key={e.name} className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-5">
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="min-w-0 text-lg font-extrabold wrap-anywhere">{e.name}</h2>
-                <span
-                  className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${open ? 'bg-ok/10 text-ok-text' : 'bg-soft text-muted'}`}
-                >
-                  {open ? 'Open' : 'Closed'}
-                </span>
-              </div>
-              <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted">
-                {e.date && (
-                  <div>
-                    <dt className="sr-only">Date</dt>
-                    <dd>{fmtDate(e.date)}</dd>
+            <li key={e.name} className={`flex flex-col gap-4 rounded-2xl border bg-surface p-5 ${open ? 'border-line' : 'border-line opacity-80'}`}>
+              <div className="flex items-start gap-4">
+                {e.date && <DateTile date={e.date} />}
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="min-w-0 text-lg leading-snug font-extrabold wrap-anywhere">{e.name}</h2>
+                    <span
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${open ? 'bg-ok/10 text-ok-text' : 'bg-soft text-muted'}`}
+                    >
+                      <span className={`size-1.5 rounded-full ${open ? 'bg-ok-text' : 'bg-muted'}`} aria-hidden="true" />
+                      {open ? 'Open' : 'Closed'}
+                    </span>
                   </div>
-                )}
-                {e.venue && (
-                  <div>
-                    <dt className="sr-only">Venue</dt>
-                    <dd>{e.venue}</dd>
-                  </div>
-                )}
-                <div>
-                  <dt className="sr-only">Tickets</dt>
-                  <dd>
-                    {count.toLocaleString('en')} tickets, {e.ticketFrom} to {e.ticketTo}
-                  </dd>
+                  <dl className="flex flex-col gap-1 text-sm text-muted">
+                    {e.date && (
+                      <Meta label="Date" icon={<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18" /></>}>
+                        {fmtDate(e.date)}
+                      </Meta>
+                    )}
+                    {e.venue && (
+                      <Meta label="Venue" icon={<><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11Z" /><circle cx="12" cy="10" r="2.5" /></>}>
+                        {e.venue}
+                      </Meta>
+                    )}
+                    <Meta label="Tickets" icon={<><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M13 5v14" strokeDasharray="2 2" /></>}>
+                        <strong className="font-semibold text-ink">{count.toLocaleString('en')} tickets</strong>, numbered {e.ticketFrom} to {e.ticketTo}
+                    </Meta>
+                  </dl>
                 </div>
-              </dl>
+              </div>
               {e.details && <p className="text-[15px] leading-relaxed">{e.details}</p>}
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={`/admin?event=${encodeURIComponent(e.name)}`}
-                  className="flex h-10 items-center rounded-lg bg-primary px-3.5 text-[15px] font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover"
+                  className="flex h-10 items-center rounded-lg bg-primary px-4 text-[15px] font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover"
                 >
                   Open desk
                 </Link>
-                <Link
-                  href={`/admin/qr?event=${encodeURIComponent(e.name)}`}
-                  className="flex h-10 items-center gap-2 rounded-lg border border-line-strong px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:bg-soft"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
-                  </svg>
+                <Link href={`/admin/tickets?event=${encodeURIComponent(e.name)}`} className={secondaryLink}>
+                  Tickets
+                </Link>
+                <Link href={`/admin/qr?event=${encodeURIComponent(e.name)}`} className={secondaryLink}>
                   QR codes
                 </Link>
               </div>

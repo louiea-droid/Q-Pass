@@ -188,11 +188,11 @@ export function EditEvent({ event }: { event: EventInfo }) {
 
   return (
     <details className="group border-t border-line pt-3">
-      <summary className="flex h-10 w-fit list-none items-center gap-2 rounded-lg font-semibold text-muted hover:text-ink [&::-webkit-details-marker]:hidden">
+      <summary className="flex h-9 w-fit list-none items-center gap-2 rounded-lg text-sm font-semibold text-muted hover:text-ink [&::-webkit-details-marker]:hidden">
         <svg className="transition-transform duration-200 group-open:rotate-90" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="m9 6 6 6-6 6" />
         </svg>
-        Edit details or close the event
+        Edit or close event
       </summary>
       <form
         className="mt-3 grid gap-4 sm:grid-cols-2"
