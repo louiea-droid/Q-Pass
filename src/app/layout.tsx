@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Figtree, Literata } from 'next/font/google'
 import Link from 'next/link'
-import { signOut } from '@/auth'
+import { signOutAction } from './signin/actions'
 import { currentStaff } from '@/lib/guard'
 import './globals.css'
 
@@ -24,13 +24,10 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
             {staff && (
               <form
                 className="ml-auto flex min-w-0 items-center gap-3 text-sm"
-                action={async () => {
-                  'use server'
-                  await signOut({ redirectTo: '/signin' })
-                }}
+                action={signOutAction}
               >
-                <span className="truncate text-muted" title={staff.email}>
-                  {staff.name || staff.email}
+                <span className="truncate text-muted" title={staff.name}>
+                  {staff.name} ({staff.role})
                 </span>
                 <button className="shrink-0 rounded-md border border-line px-3 py-1.5 hover:bg-paper">Sign out</button>
               </form>

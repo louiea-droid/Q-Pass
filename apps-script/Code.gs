@@ -76,7 +76,7 @@ const OPS = {
 
   // One locked step: find the ticket, mark it checked in if it isn't yet, and log the attempt.
   // Returns the ticket row as it was BEFORE this scan (or null if not found).
-  checkIn: ({ event, ticket, now, staffName, staffEmail, method }) => {
+  checkIn: ({ event, ticket, now, staffName, staffRole, method }) => {
     const lock = LockService.getScriptLock()
     lock.waitLock(10000)
     try {
@@ -88,7 +88,7 @@ const OPS = {
       const before = i < 0 ? null : rows[i]
       const result = !before ? 'not_found' : before[4] ? 'already_checked_in' : 'checked_in'
       if (result === 'checked_in') writeAt(sh, i + 2, 5, [[now, staffName, method]])
-      appendTo('Log', [[now, event, ticket, result, staffEmail, staffName, method]])
+      appendTo('Log', [[now, event, ticket, result, staffName, staffRole, method]])
       return before
     } finally {
       lock.releaseLock()

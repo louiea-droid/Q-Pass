@@ -1,6 +1,6 @@
 export type Role = 'admin' | 'scanner'
 
-export type Staff = { email: string; name: string; role: Role }
+export type Staff = { name: string; role: Role }
 
 export type EventInfo = {
   name: string
@@ -35,7 +35,7 @@ export type LogEntry = {
   event: string
   ticket: string
   result: LogResult
-  staffEmail: string
+  staffRole: string
   staffName: string
   method: 'QR' | 'manual'
 }

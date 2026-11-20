@@ -1,16 +1,14 @@
 import 'server-only'
 import { decideCheckIn } from './checkin'
 import { isValidEventName, normalizeTicket, parsePayload, ticketRange } from './qr'
-import { parseStaffRows, withEnvAdmins } from './staff'
 import type { EventInfo, LogEntry, LogResult, ScanOutcome, Staff, Ticket } from './types'
 
 // The only module that talks to the Google Sheet, via the Apps Script in apps-script/Code.gs.
 // Swap this file to move to Supabase.
 
 const HEADERS = {
-  Staff: ['Email', 'Name', 'Role', 'Active'],
   Events: ['Name', 'Date', 'Venue', 'Details', 'TicketFrom', 'TicketTo', 'Status'],
-  Log: ['Time', 'Event', 'Ticket', 'Result', 'StaffEmail', 'StaffName', 'Method'],
+  Log: ['Time', 'Event', 'Ticket', 'Result', 'StaffName', 'Role', 'Method'],
 }
 const TICKET_HEADERS = ['Ticket', 'Name', 'Info', 'Notes', 'CheckedInAt', 'CheckedInBy', 'Method']
 
@@ -49,13 +47,7 @@ export async function ensureSchema(): Promise<void> {
   for (const [name, headers] of Object.entries(HEADERS)) if (!have.has(name)) await addTab(name, headers)
 }
 
-// ponytail: per-instance memory caches; serverless instances don't share them, so correctness never depends on them.
-let staffCache: { at: number; list: Staff[] } | undefined
-export async function getStaffList(): Promise<Staff[]> {
-  if (!staffCache || Date.now() - staffCache.at > 60_000) staffCache = { at: Date.now(), list: withEnvAdmins(parseStaffRows(await read('Staff!A:D')), process.env.ADMIN_EMAILS) }
-  return staffCache.list
-}
-
+// ponytail: per-instance memory cache; serverless instances don't share it, so correctness never depends on it.
 let eventsCache: { at: number; list: EventInfo[] } | undefined
 export async function listEvents(): Promise<EventInfo[]> {
   if (!eventsCache || Date.now() - eventsCache.at > 10_000) {
@@ -128,7 +120,7 @@ export async function updateTicket(event: string, ticket: string, patch: Partial
 }
 
 async function log(event: string, ticket: string, result: LogResult, staff: Staff, method: 'QR' | 'manual') {
-  await append('Log', [[new Date().toISOString(), event, ticket, result, staff.email, staff.name, method]])
+  await append('Log', [[new Date().toISOString(), event, ticket, result, staff.name, staff.role, method]])
 }
 
 export async function checkIn(args: {
@@ -156,7 +148,7 @@ export async function checkIn(args: {
 
   // One locked script call finds the row, marks it if still free, and logs: two phones can't both win.
   const before = await gas<string[] | null>('checkIn', {
-    event: event.name, ticket: ticketNo, now, staffName: args.staff.name, staffEmail: args.staff.email, method: args.method,
+    event: event.name, ticket: ticketNo, now, staffName: args.staff.name, staffRole: args.staff.role, method: args.method,
   })
   return decide(before ? toTicket(before) : undefined)
 }
@@ -184,8 +176,8 @@ export async function getDashboard(event: string): Promise<{
     .filter((r) => r[1] === event)
     .slice(-30)
     .reverse()
-    .map(([time, ev, ticket, result, staffEmail, staffName, method]) =>
-      ({ time, event: ev, ticket, result: result as LogResult, staffEmail, staffName, method: method === 'manual' ? 'manual' : 'QR' }) as LogEntry)
+    .map(([time, ev, ticket, result, staffName, staffRole, method]) =>
+      ({ time, event: ev, ticket, result: result as LogResult, staffName, staffRole, method: method === 'manual' ? 'manual' : 'QR' }) as LogEntry)
   return {
     total: tickets.length,
     named: tickets.filter((t) => t.name).length,

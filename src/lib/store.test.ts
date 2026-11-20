@@ -30,7 +30,7 @@ beforeEach(() => {
   })
 })
 
-const staff = { email: 'maria@church.org', name: 'Maria', role: 'scanner' as const }
+const staff = { name: 'Maria', role: 'scanner' as const }
 
 test('first scan of a ticket is checked in in one locked script call', async () => {
   handlers.checkIn = () => ['0001', 'Juan', '', '', '', '', '']
@@ -38,7 +38,7 @@ test('first scan of a ticket is checked in in one locked script call', async () 
   const r = await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
   expect(r).toMatchObject({ result: 'checked_in', name: 'Juan', ticket: '0001' })
   const call = calls.find((c) => c.op === 'checkIn')!
-  expect(call.args).toMatchObject({ event: 'TAC Gala', ticket: '0001', staffName: 'Maria', staffEmail: 'maria@church.org', method: 'QR' })
+  expect(call.args).toMatchObject({ event: 'TAC Gala', ticket: '0001', staffName: 'Maria', staffRole: 'scanner', method: 'QR' })
 })
 
 test('scan of a used ticket reports when and by whom, from the row before the scan', async () => {
