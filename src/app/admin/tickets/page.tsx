@@ -28,7 +28,7 @@ export default async function TicketsPage({ searchParams }: PageProps<'/admin/ti
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-2xl font-extrabold">Tickets</h1>
           <p className="text-sm text-muted">
-            {event.name}. Type a name when you hand a ticket out: that marks it as given.
+            {event.name}. Click a box to type. Adding a name marks the ticket as given.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">

@@ -7,7 +7,7 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   const staff = await requireStaff('admin')
   return (
     <>
-      <header className="no-print border-b border-line bg-surface">
+      <header className="no-print sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3">
           <span className="flex items-center gap-2.5 text-lg font-extrabold text-primary">
             <Logo size={32} />

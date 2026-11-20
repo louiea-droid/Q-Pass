@@ -11,10 +11,10 @@ type Col = keyof Fields
 type RowState = 'saving' | 'saved' | 'error'
 
 
-const COLS: { key: Col; label: string; width: string }[] = [
-  { key: 'name', label: 'Name', width: 'min-w-56' },
-  { key: 'info', label: 'Details', width: 'min-w-48' },
-  { key: 'notes', label: 'Notes', width: 'min-w-48' },
+const COLS: { key: Col; label: string; width: string; hint: string }[] = [
+  { key: 'name', label: 'Name', width: 'min-w-56', hint: 'Add a name' },
+  { key: 'info', label: 'Details', width: 'min-w-48', hint: 'Add details' },
+  { key: 'notes', label: 'Notes', width: 'min-w-48', hint: 'Add a note' },
 ]
 const FILTERS: { id: TicketFilter; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -143,9 +143,9 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
           </button>
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-line">
+        <div className="max-h-[calc(100dvh-13rem)] overflow-auto rounded-xl border border-line">
           <table className="w-full text-left text-sm">
-            <thead className="bg-soft text-[13px] text-muted">
+            <thead className="sticky top-0 z-10 bg-soft text-[13px] text-muted shadow-[0_1px_0_var(--line)]">
               <tr>
                 <th scope="col" className="w-20 px-3 py-2.5 font-semibold">Ticket</th>
                 {COLS.map((c) => (
@@ -175,7 +175,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                           value={draft[t.ticket][c.key]}
                           readOnly={readOnly}
                           autoComplete="off"
-                          placeholder={c.key === 'name' && !readOnly ? 'Add a name' : ''}
+                          placeholder={readOnly ? '' : c.hint}
                           onChange={(e) => edit(t.ticket, c.key, e.target.value)}
                           onBlur={() => save(t.ticket)}
                           onKeyDown={(e) => {
@@ -184,7 +184,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                               next(t.ticket, c.key)
                             } else if (e.key === 'Escape') edit(t.ticket, c.key, saved[t.ticket][c.key])
                           }}
-                          className="h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-sm hover:border-line-strong focus:border-primary focus:bg-surface focus:outline-none"
+                          className={readOnly ? 'h-9 w-full border-0 bg-transparent px-2 text-sm' : 'h-9 w-full rounded-md border border-line-strong bg-paper px-2.5 text-sm transition-colors duration-150 placeholder:text-muted/80 hover:border-primary/60 focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/25 focus:outline-none'}
                         />
                       </td>
                     ))}
