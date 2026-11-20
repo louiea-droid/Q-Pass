@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { updateTicketAction } from '../../actions'
+import Pager from '../Pager'
 import { isGiven, matchTicket, type TicketFilter } from '@/lib/display'
 import type { Ticket } from '@/lib/types'
 
@@ -9,7 +10,7 @@ type Fields = { name: string; info: string; notes: string }
 type Col = keyof Fields
 type RowState = 'saving' | 'saved' | 'error'
 
-const PAGE = 100
+
 const COLS: { key: Col; label: string; width: string }[] = [
   { key: 'name', label: 'Name', width: 'min-w-56' },
   { key: 'info', label: 'Details', width: 'min-w-48' },
@@ -33,13 +34,14 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<TicketFilter>('all')
   const [page, setPage] = useState(0)
+  const [size, setSize] = useState(25)
 
   // Filter on what's typed, so a name you just entered moves the ticket to "Given" right away.
   const rows = tickets.map((t) => ({ ...t, ...draft[t.ticket] }))
   const matches = rows.filter((t) => matchTicket(t, query, filter))
-  const pages = Math.max(1, Math.ceil(matches.length / PAGE))
+  const pages = Math.max(1, Math.ceil(matches.length / size))
   const current = Math.min(page, pages - 1)
-  const shown = matches.slice(current * PAGE, current * PAGE + PAGE)
+  const shown = matches.slice(current * size, current * size + size)
   const given = rows.filter(isGiven).length
 
   async function save(ticket: string) {
@@ -210,34 +212,21 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
-        <span role="status">
-          {Object.values(rowState).includes('error')
-            ? 'Some changes weren’t saved. Click the field and press Enter to try again.'
-            : `Showing ${matches.length ? current * PAGE + 1 : 0}–${current * PAGE + shown.length} of ${matches.length}. Changes save automatically.`}
-        </span>
-        {pages > 1 && (
-          <span className="flex items-center gap-2">
-            <button
-              disabled={current === 0}
-              onClick={() => setPage(current - 1)}
-              className="h-9 rounded-lg border border-line-strong px-3 font-semibold hover:bg-soft disabled:opacity-40"
-            >
-              Previous
-            </button>
-            <span className="tabular-nums">
-              Page {current + 1} of {pages}
-            </span>
-            <button
-              disabled={current >= pages - 1}
-              onClick={() => setPage(current + 1)}
-              className="h-9 rounded-lg border border-line-strong px-3 font-semibold hover:bg-soft disabled:opacity-40"
-            >
-              Next
-            </button>
-          </span>
-        )}
-      </div>
+      <p role="status" className={`text-sm ${Object.values(rowState).includes('error') ? 'font-semibold text-bad' : 'text-muted'}`}>
+        {Object.values(rowState).includes('error')
+          ? 'Some changes weren’t saved. Click the field and press Enter to try again.'
+          : 'Changes save automatically.'}
+      </p>
+      <Pager
+        page={current}
+        size={size}
+        total={matches.length}
+        onPage={setPage}
+        onSize={(s) => {
+          setSize(s)
+          setPage(0)
+        }}
+      />
     </section>
   )
 }
