@@ -7,6 +7,7 @@ import { manualScanAction, scanAction, setNameAction } from '../actions'
 import { signOutAction } from '../signin/actions'
 import { headline } from '@/lib/display'
 import type { ScanOutcome, Staff } from '@/lib/types'
+import ThemeToggle from '../ThemeToggle'
 
 const EVENT_KEY = 'tac-scan-event'
 const COOLDOWN_MS = 2000
@@ -168,6 +169,7 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
             <path d="m6 9 6 6 6-6" />
           </svg>
         </label>
+        <ThemeToggle />
         <details className="relative">
           <summary
             aria-label={`Signed in as ${staff.name}. Open menu`}

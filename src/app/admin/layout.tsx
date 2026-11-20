@@ -2,6 +2,7 @@ import { requireStaff } from '@/lib/guard'
 import Logo from '../Logo'
 import { signOutAction } from '../signin/actions'
 import AdminNav from './AdminNav'
+import ThemeToggle from '../ThemeToggle'
 
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   const staff = await requireStaff('admin')
@@ -15,6 +16,7 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
           </span>
           <AdminNav />
           <form action={signOutAction} className="ml-auto flex min-w-0 items-center gap-3">
+            <ThemeToggle />
             <span className="truncate text-sm text-muted">{staff.name}, admin</span>
             <button className="h-10 shrink-0 rounded-xl border border-line-strong px-3.5 text-sm font-semibold transition-colors duration-200 hover:bg-soft">
               Sign out

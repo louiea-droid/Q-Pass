@@ -22,8 +22,9 @@
   --note-ink: #5c4508;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+/* Dark: set by the theme switch, or the device setting (see layout.tsx). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
     --paper: #0f1124;
     --surface: #181b33;
     --ink: #e8eaf6;
@@ -38,7 +39,6 @@
     --bad-text: #fca5a5;
     --note: #2e2611;
     --note-ink: #f3dfa6;
-  }
 }
 
 @theme inline {
@@ -63,7 +63,22 @@
   --font-sans: var(--font-jakarta);
 }
 
-:root { color-scheme: light dark; }
+:root { color-scheme: light; }
+
+/* Theme switch: sun and moon swap with a spin (adapted from Uiverse.io by Creatlydev). */
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.theme-toggle > svg {
+  grid-area: 1 / 1;
+  transition: transform 500ms;
+}
+.theme-toggle .icon--moon { transition-delay: 200ms; }
+.theme-toggle .icon--sun { transform: scale(0); }
+:root[data-theme="dark"] .theme-toggle .icon--moon { transition-delay: 0ms; transform: rotate(360deg) scale(0); }
+:root[data-theme="dark"] .theme-toggle .icon--sun { transition-delay: 200ms; transform: scale(1) rotate(360deg); }
 
 body {
   background: var(--paper);
