@@ -26,7 +26,15 @@ async function sb<T>(path: string, init: { method?: string; body?: unknown; head
     cache: 'no-store',
   })
   const text = await res.text()
-  const data = text ? JSON.parse(text) : null
+  let data
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    // Not JSON: Supabase's gateway answered instead of the database (project paused, restarting or down).
+    throw new Error(
+      `Supabase isn’t responding (error ${res.status}). Open your project at supabase.com: if it says Paused, click Restore; otherwise restart it from Project Settings.`,
+    )
+  }
   if (!res.ok) {
     if (data?.code === '23505') throw new Error('Duplicate')
     throw new Error(data?.message ?? `Database error (${res.status})`)

@@ -110,6 +110,12 @@ test('a wrong key surfaces a clear error', async () => {
   await expect(listEvents()).rejects.toThrow('Invalid API key')
 })
 
+test('a down or paused project (plain-text error page) says so instead of a JSON parse error', async () => {
+  vi.stubGlobal('fetch', async () => new Response('Internal server error.', { status: 555 }))
+  const { listEvents } = await import('./store-supabase')
+  await expect(listEvents()).rejects.toThrow(/Supabase isn’t responding \(error 555\)/)
+})
+
 test('new sb_secret_ keys go only in the apikey header; legacy JWT keys also as Bearer', async () => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_abc'
   let { listEvents } = await import('./store-supabase')
