@@ -41,12 +41,25 @@ export default function GiveTickets({
 }) {
   const [name, setName] = useState('')
   const [info, setInfo] = useState('')
-  const [numbersText, setNumbersText] = useState('')
+  const [chips, setChips] = useState<string[]>([])
+  const [typing, setTyping] = useState('')
   const [error, setError] = useState('')
   const [pending, run] = useTransition()
 
-  const parsed = parseTicketList(numbersText)
+  // Chips you've added, plus whatever is still being typed (so you don't have to press Enter on the last one).
+  const pendingText = parseTicketList(typing)
+  const parsed = { numbers: [...new Set([...chips, ...pendingText.numbers])], invalid: pendingText.invalid }
   const plan = planGive(rows, parsed.numbers, name)
+  const takenSet = new Set([...plan.taken.map((t) => t.ticket), ...plan.missing])
+
+  function commit() {
+    const p = parseTicketList(typing)
+    if (p.invalid.length) return setError(`Not a ticket number: ${p.invalid.join(', ')}.`)
+    setChips((c) => [...new Set([...c, ...p.numbers])])
+    setTyping('')
+    setError('')
+  }
+
   const problem = parsed.invalid.length
     ? `Not a ticket number: ${parsed.invalid.join(', ')}.`
     : plan.missing.length
@@ -108,21 +121,51 @@ export default function GiveTickets({
         </label>
       </div>
       <div className="flex flex-col gap-1">
-        <label className="flex flex-col gap-1 text-sm font-bold">
+        <label htmlFor="give-numbers" className="text-sm font-bold">
           Ticket numbers
+        </label>
+        <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-2 py-1.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25">
+          {chips.map((c) => (
+            <span
+              key={c}
+              className={`flex h-7 items-center gap-1 rounded-md pr-1 pl-2 text-sm font-bold tabular-nums ${
+                takenSet.has(c) ? 'bg-bad/15 text-bad-text' : 'bg-soft text-ink'
+              }`}
+            >
+              {c}
+              <button
+                type="button"
+                onClick={() => setChips((x) => x.filter((n) => n !== c))}
+                aria-label={`Remove ticket ${c}`}
+                className="flex size-5 items-center justify-center rounded text-muted hover:bg-line hover:text-ink"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          ))}
           <input
-            value={numbersText}
+            id="give-numbers"
+            value={typing}
             inputMode="numeric"
             autoComplete="off"
-            placeholder="e.g. 12, 57, 103"
+            placeholder={chips.length ? 'Add another' : 'Type a number, press Enter'}
             aria-describedby="numbers-help"
             onChange={(e) => {
-              setNumbersText(e.target.value)
+              setTyping(e.target.value)
               setError('')
             }}
-            className={`${input} tabular-nums`}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ' || e.key === ',') && typing.trim()) {
+                e.preventDefault()
+                commit()
+              } else if (e.key === 'Backspace' && !typing && chips.length) setChips((x) => x.slice(0, -1))
+            }}
+            onBlur={() => typing.trim() && commit()}
+            className="h-7 min-w-32 flex-1 bg-transparent px-1 text-[15px] font-medium tabular-nums focus:outline-none focus-visible:outline-none"
           />
-        </label>
+        </div>
         <p id="numbers-help" aria-live="polite" className={`text-sm ${problem ? 'font-semibold text-bad-text' : 'text-muted'}`}>
           {problem ||
             (n ? (
@@ -130,7 +173,7 @@ export default function GiveTickets({
                 {n === 1 ? 'Ticket' : `${n} tickets:`} <strong className="text-ink">{list(parsed.numbers)}</strong>
               </>
             ) : (
-              'Type the numbers on the tickets you handed over, separated by commas. Use a dash for a run, like 10-14.'
+              'Type each ticket number and press Enter. A dash adds a run, like 10-14.'
             ))}
         </p>
       </div>

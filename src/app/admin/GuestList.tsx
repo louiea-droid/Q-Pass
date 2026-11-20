@@ -228,6 +228,19 @@ function Guest({
           >
             Edit
           </button>
+          {t.name && !t.checkedInAt && (
+            <button
+              disabled={pending}
+              onClick={() => {
+                if (confirm(`Remove ${t.name} from ticket ${t.ticket}? The ticket becomes “Not given” and their details are cleared.`))
+                  act(() => updateTicketAction(event, t.ticket, { name: '', info: '', notes: '' }), `Ticket ${t.ticket} is free again.`)
+              }}
+              aria-label={`Remove ${t.name} from ticket ${t.ticket}`}
+              className={`${btn} border border-bad/40 text-bad-text hover:bg-bad/10`}
+            >
+              Remove
+            </button>
+          )}
           {t.checkedInAt ? (
             <button
               disabled={pending}
