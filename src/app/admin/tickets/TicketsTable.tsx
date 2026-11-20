@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { updateTicketAction } from '../../actions'
 import Pager from '../Pager'
-import GiveTickets from './GiveTickets'
+import GiveTickets, { GiveButton } from './GiveTickets'
 import { groupCounts, groupKey } from '@/lib/groups'
 import { isGiven, matchTicket, type TicketFilter } from '@/lib/display'
 import type { Ticket } from '@/lib/types'
@@ -36,6 +36,8 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
   const [filter, setFilter] = useState<TicketFilter>('all')
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
+  const [giving, setGiving] = useState(false)
+  const [notice, setNotice] = useState('')
 
   // Filter on what's typed, so a name you just entered moves the ticket to "Given" right away.
   const rows = tickets.map((t) => ({ ...t, ...draft[t.ticket] }))
@@ -81,6 +83,24 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
     }
   }
 
+  // "Ungive": clear the person's name, details and notes so the ticket is free again.
+  async function remove(t: { ticket: string; name: string }) {
+    if (!confirm(`Remove ${t.name} from ticket ${t.ticket}? The ticket becomes “Not given” and their details are cleared.`)) return
+    const blank = { name: '', info: '', notes: '' }
+    setRowState((x) => ({ ...x, [t.ticket]: 'saving' }))
+    try {
+      const r = await updateTicketAction(event, t.ticket, blank)
+      if (r.error) throw new Error(r.error)
+      setDraft((x) => ({ ...x, [t.ticket]: blank }))
+      setSaved((x) => ({ ...x, [t.ticket]: blank }))
+      setRowState((x) => ({ ...x, [t.ticket]: 'saved' }))
+      setNotice(`Ticket ${t.ticket} is free again.`)
+    } catch (e) {
+      setRowState((x) => ({ ...x, [t.ticket]: 'error' }))
+      setErrors((x) => ({ ...x, [t.ticket]: (e as Error).message || 'Couldn’t remove' }))
+    }
+  }
+
   function edit(ticket: string, col: Col, value: string) {
     setDraft((d) => ({ ...d, [ticket]: { ...d[ticket], [col]: value } }))
   }
@@ -96,14 +116,32 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-base text-muted">
-          <strong className="text-2xl font-extrabold text-ink tabular-nums">{given.toLocaleString('en')}</strong> of{' '}
-          {rows.length.toLocaleString('en')} tickets given
-        </p>
-        {readOnly && <p className="rounded-lg bg-note px-3 py-1.5 text-sm text-note-ink">This event is closed, so tickets are read-only.</p>}
+        <div className="flex flex-col gap-0.5">
+          <p className="text-base text-muted">
+            <strong className="text-2xl font-extrabold text-ink tabular-nums">{given.toLocaleString('en')}</strong> of{' '}
+            {rows.length.toLocaleString('en')} tickets given
+          </p>
+          {notice && (
+            <p role="status" className="text-sm font-semibold text-ok-text">
+              {notice}
+            </p>
+          )}
+        </div>
+        {readOnly ? (
+          <p className="rounded-lg bg-note px-3 py-1.5 text-sm text-note-ink">This event is closed, so tickets are read-only.</p>
+        ) : (
+          !giving && (
+            <GiveButton
+              onClick={() => {
+                setGiving(true)
+                setNotice('')
+              }}
+            />
+          )
+        )}
       </div>
 
-      {!readOnly && <GiveTickets event={event} rows={rows} onGiven={given_} />}
+      {giving && <GiveTickets event={event} rows={rows} onGiven={given_} onClose={() => setGiving(false)} onDone={setNotice} />}
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-0 flex-[1_1_260px]">
@@ -174,6 +212,11 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                 ))}
                 <th scope="col" className="w-28 px-3 py-2.5 font-semibold">Status</th>
                 <th scope="col" className="w-36 px-3 py-2.5 font-semibold">Checked in</th>
+                {!readOnly && (
+                  <th scope="col" className="w-24 px-2 py-2.5">
+                    <span className="sr-only">Remove</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -211,7 +254,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                       {state === 'saving' ? (
                         <span className="text-[13px] text-muted">Saving…</span>
                       ) : state === 'error' ? (
-                        <span role="alert" className="text-[13px] font-semibold text-bad" title={errors[t.ticket]}>
+                        <span role="alert" className="text-[13px] font-semibold text-bad-text" title={errors[t.ticket]}>
                           Not saved
                         </span>
                       ) : isGiven(t) ? (
@@ -228,6 +271,21 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                     <td className="px-3 py-1.5 text-[13px] text-muted">
                       {t.checkedInAt ? `${fmt(t.checkedInAt)} by ${t.checkedInBy || 'someone'}` : 'Not yet'}
                     </td>
+                    {!readOnly && (
+                      <td className="px-2 py-1.5 text-right">
+                        {isGiven(saved[t.ticket]) && (
+                          <button
+                            onClick={() => remove({ ticket: t.ticket, name: saved[t.ticket].name })}
+                            disabled={!!t.checkedInAt || state === 'saving'}
+                            title={t.checkedInAt ? 'Already checked in. Undo the check-in on the Check-in desk first.' : undefined}
+                            aria-label={`Remove ${saved[t.ticket].name} from ticket ${t.ticket}`}
+                            className="h-8 rounded-md border border-bad/40 px-2.5 text-[13px] font-semibold text-bad-text transition-colors duration-150 hover:bg-bad/10 disabled:cursor-not-allowed disabled:border-line disabled:text-muted disabled:opacity-60"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 )
               })}
@@ -236,7 +294,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
         </div>
       )}
 
-      <p role="status" className={`text-sm ${Object.values(rowState).includes('error') ? 'font-semibold text-bad' : 'text-muted'}`}>
+      <p role="status" className={`text-sm ${Object.values(rowState).includes('error') ? 'font-semibold text-bad-text' : 'text-muted'}`}>
         {Object.values(rowState).includes('error')
           ? 'Some changes weren’t saved. Click the field and press Enter to try again.'
           : 'Changes save automatically.'}

@@ -15,6 +15,7 @@
   --gold: #e2b33c;
   --ok: #146c3a;
   --ok-text: #146c3a;
+  --bad-text: #b42318;
   --bad: #b42318;
   --on-flag: #ffffff;
   --note: #fff7e0;
@@ -34,6 +35,7 @@
     --primary-ink: #10122a;
     --soft: #23284a;
     --ok-text: #6ee7a0;
+    --bad-text: #fca5a5;
     --note: #2e2611;
     --note-ink: #f3dfa6;
   }
@@ -53,6 +55,7 @@
   --color-gold: var(--gold);
   --color-ok: var(--ok);
   --color-ok-text: var(--ok-text);
+  --color-bad-text: var(--bad-text);
   --color-bad: var(--bad);
   --color-on-flag: var(--on-flag);
   --color-note: var(--note);

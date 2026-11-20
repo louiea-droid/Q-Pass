@@ -96,7 +96,7 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
             className={`${input} h-11 text-base`}
           />
         </label>
-        <p id="name-help" className={`text-xs ${nameProblem ? 'font-semibold text-bad' : 'text-muted'}`}>
+        <p id="name-help" className={`text-xs ${nameProblem ? 'font-semibold text-bad-text' : 'text-muted'}`}>
           {nameProblem || 'It’s printed inside every QR code, so it can’t be changed later.'}
         </p>
       </div>
@@ -140,7 +140,7 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
               className={`${input.replace('w-full', 'w-28')} tabular-nums`}
             />
           </label>
-          <p aria-live="polite" className={`pb-2.5 text-sm ${rangeProblem ? 'font-semibold text-bad' : 'text-muted'}`}>
+          <p aria-live="polite" className={`pb-2.5 text-sm ${rangeProblem ? 'font-semibold text-bad-text' : 'text-muted'}`}>
             {rangeProblem || (
               <>
                 That’s <strong className="text-ink">{count.toLocaleString('en')}</strong> tickets.
@@ -151,7 +151,7 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
       </fieldset>
 
       {error && (
-        <p role="alert" className="font-semibold text-bad">
+        <p role="alert" className="font-semibold text-bad-text">
           {error}
         </p>
       )}
@@ -225,12 +225,12 @@ export function EditEvent({ event }: { event: EventInfo }) {
               if (!open || confirm(`Close ${event.name}? Scanners will turn its tickets away until you reopen it.`))
                 save({ status: open ? 'closed' : 'open' }, open ? 'Event closed.' : 'Event reopened.')
             }}
-            className={`${secondary} ${open ? 'border-bad/40 text-bad hover:bg-bad/5' : ''}`}
+            className={`${secondary} ${open ? 'border-bad/40 text-bad-text hover:bg-bad/5' : ''}`}
           >
             {open ? 'Close event' : 'Reopen event'}
           </button>
           <span role="status" className="text-sm font-semibold">
-            {error ? <span className="text-bad">{error}</span> : saved}
+            {error ? <span className="text-bad-text">{error}</span> : saved}
           </span>
         </div>
       </form>

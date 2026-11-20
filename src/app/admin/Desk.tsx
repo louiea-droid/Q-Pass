@@ -101,7 +101,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
                       <span className="flex min-w-0 flex-1 flex-col text-[15px]">
                         <strong className="truncate">{label}</strong>
                         {!ok && (
-                          <span className={`text-[13px] font-semibold first-letter:uppercase ${r.result === 'undone' ? 'text-muted' : 'text-bad'}`}>
+                          <span className={`text-[13px] font-semibold first-letter:uppercase ${r.result === 'undone' ? 'text-muted' : 'text-bad-text'}`}>
                             {RESULT_TEXT[r.result]}
                           </span>
                         )}
@@ -145,7 +145,7 @@ function Arrivals({ stats, error }: { stats: Stats | null; error: string }) {
   if (!stats)
     return (
       <section className="rounded-2xl border border-line bg-surface p-5" aria-busy="true">
-        <p className={error ? 'text-bad' : 'text-muted'} role={error ? 'alert' : 'status'}>
+        <p className={error ? 'text-bad-text' : 'text-muted'} role={error ? 'alert' : 'status'}>
           {error ? `Couldn’t load arrivals: ${error}. Retrying every 10 seconds.` : 'Loading arrivals…'}
         </p>
       </section>
@@ -178,7 +178,7 @@ function Arrivals({ stats, error }: { stats: Stats | null; error: string }) {
         <span>
           <strong className="text-ink">{stats.checkedIn}</strong> checked in altogether
         </span>
-        {error && <span className="text-bad">Last update failed. Showing the latest numbers we have.</span>}
+        {error && <span className="text-bad-text">Last update failed. Showing the latest numbers we have.</span>}
       </div>
     </section>
   )

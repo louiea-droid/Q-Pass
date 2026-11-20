@@ -220,7 +220,7 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
           </div>
 
           {cameraError && (
-            <p role="alert" className="mx-4 mt-3 rounded-xl border border-bad p-3 text-sm text-bad">
+            <p role="alert" className="mx-4 mt-3 rounded-xl border border-bad p-3 text-sm text-bad-text">
               {cameraError}
             </p>
           )}

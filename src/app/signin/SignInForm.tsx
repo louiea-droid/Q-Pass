@@ -19,7 +19,7 @@ export default function SignInForm() {
         <input name="passcode" type="password" required autoComplete="current-password" className={input} />
       </label>
       {state.error && (
-        <p role="alert" className="font-medium text-bad">
+        <p role="alert" className="font-medium text-bad-text">
           {state.error}
         </p>
       )}

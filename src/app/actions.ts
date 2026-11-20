@@ -87,24 +87,23 @@ export async function updateEventAction(name: string, patch: Partial<Omit<EventI
   return attempt(() => updateEvent(name, { date, venue, details, status }))
 }
 
-/** Give `count` tickets from `start` to one person (e.g. a family). Refuses if any is someone else's. */
+/** Give the listed tickets (handed out at random) to one person or family. Refuses if any is someone else's. */
 export async function giveTicketsAction(
   event: string,
-  start: string,
-  count: number,
+  numbers: string[],
   name: string,
   info: string,
 ): Promise<ActionResult & { given?: string[] }> {
   await requireStaff('admin')
   const who = name.trim()
-  const first = normalizeTicket(start)
+  const list = [...new Set(numbers.map(normalizeTicket))]
   if (!who) return { error: 'Type the name of the person receiving the tickets.' }
-  if (!first) return { error: 'Type the first ticket number, like 0010.' }
-  if (!Number.isInteger(count) || count < 1 || count > 50) return { error: 'Give between 1 and 50 tickets at a time.' }
+  if (!list.length || list.includes(null)) return { error: 'Type the ticket numbers, like 12, 57, 103.' }
+  if (list.length > 50) return { error: 'Give up to 50 tickets at a time.' }
   try {
     await requireOpenEvent(event)
-    const plan = planGive(await listTickets(event), first, count, who)
-    if (plan.missing.length) return { error: `This event has no ticket ${plan.missing[0]}. Pick an earlier start.` }
+    const plan = planGive(await listTickets(event), list as string[], who)
+    if (plan.missing.length) return { error: `This event has no ticket ${plan.missing.join(', ')}.` }
     if (plan.taken.length)
       return { error: `Already given: ${plan.taken.map((t) => `${t.ticket} (${t.name})`).join(', ')}. Pick other numbers.` }
     await Promise.all(plan.tickets.map((t) => updateTicket(event, t, { name: who, ...(info.trim() && { info: info.trim() }) })))

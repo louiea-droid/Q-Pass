@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { firstFreeRun, groupCounts, groupKey, planGive } from './groups'
+import { groupCounts, groupKey, parseTicketList, planGive } from './groups'
 
 const t = (ticket: string, name = '', checkedInAt = '') => ({ ticket, name, checkedInAt })
 
@@ -21,23 +21,30 @@ test('group counts: tickets per name and how many are here', () => {
   expect(counts.has('')).toBe(false)
 })
 
-const list = [t('0000'), t('0001', 'Ana'), t('0002'), t('0003'), t('0004'), t('0005'), t('0006')]
-
-test('first free run finds the first block of consecutive free tickets', () => {
-  expect(firstFreeRun(list, 1)).toBe('0000')
-  expect(firstFreeRun(list, 3)).toBe('0002')
-  expect(firstFreeRun(list, 6)).toBeNull()
+test('ticket list: random numbers separated by commas or spaces, zero-padded', () => {
+  expect(parseTicketList('12, 57 103')).toEqual({ numbers: ['0012', '0057', '0103'], invalid: [] })
 })
 
-test('plan: the numbers to give, starting at a ticket', () => {
-  expect(planGive(list, '0002', 3, 'Juan')).toEqual({ tickets: ['0002', '0003', '0004'], taken: [], missing: [] })
+test('ticket list: dashes make a run, including en dashes', () => {
+  expect(parseTicketList('10-12, 0200–0201')).toEqual({ numbers: ['0010', '0011', '0012', '0200', '0201'], invalid: [] })
 })
+
+test('ticket list: repeats are kept once; junk and backwards runs are reported', () => {
+  expect(parseTicketList('5, 5, abc, 9-7')).toEqual({ numbers: ['0005'], invalid: ['abc', '9-7'] })
+  expect(parseTicketList('  ')).toEqual({ numbers: [], invalid: [] })
+})
+
+const list = [t('0000'), t('0001', 'Ana'), t('0002'), t('0003')]
 
 test('plan: tickets already given to someone else are reported, the same person is fine', () => {
-  expect(planGive(list, '0000', 3, 'Juan').taken).toEqual([{ ticket: '0001', name: 'Ana' }])
-  expect(planGive(list, '0000', 3, ' ana ').taken).toEqual([])
+  expect(planGive(list, ['0000', '0001', '0002'], 'Juan')).toEqual({
+    tickets: ['0000', '0001', '0002'],
+    taken: [{ ticket: '0001', name: 'Ana' }],
+    missing: [],
+  })
+  expect(planGive(list, ['0001'], ' ana ').taken).toEqual([])
 })
 
-test('plan: numbers past the end of the event are reported as missing', () => {
-  expect(planGive(list, '0005', 4, 'Juan').missing).toEqual(['0007', '0008'])
+test('plan: numbers that are not in the event are reported as missing', () => {
+  expect(planGive(list, ['0003', '0099'], 'Juan')).toEqual({ tickets: ['0003'], taken: [], missing: ['0099'] })
 })

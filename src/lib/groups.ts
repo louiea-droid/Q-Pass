@@ -19,33 +19,34 @@ export function groupCounts(tickets: T[]): Map<string, { total: number; here: nu
 
 const pad = (n: number) => String(n).padStart(4, '0')
 
-/** First ticket that starts `count` consecutive tickets with no name, or null. */
-export function firstFreeRun(tickets: { ticket: string; name: string }[], count: number): string | null {
-  const free = new Set(tickets.filter((t) => !t.name.trim()).map((t) => Number(t.ticket)))
-  const sorted = [...free].sort((a, b) => a - b)
-  for (const start of sorted) {
-    let ok = true
-    for (let i = 1; i < count && ok; i++) ok = free.has(start + i)
-    if (ok) return pad(start)
+/** Ticket numbers as typed by an admin: "12, 57 103" or "10-14" runs. Tickets are handed out at random. */
+export function parseTicketList(text: string): { numbers: string[]; invalid: string[] } {
+  const numbers: string[] = []
+  const invalid: string[] = []
+  for (const token of text.split(/[\s,;]+/).filter(Boolean)) {
+    const run = /^(\d{1,4})[-–](\d{1,4})$/.exec(token)
+    const one = /^\d{1,4}$/.test(token)
+    if (one) numbers.push(pad(Number(token)))
+    else if (run && Number(run[1]) <= Number(run[2]))
+      for (let n = Number(run[1]); n <= Number(run[2]); n++) numbers.push(pad(n))
+    else invalid.push(token)
   }
-  return null
+  return { numbers: [...new Set(numbers)], invalid }
 }
 
-/** Which tickets "give `count` tickets from `start` to `name`" touches, and what's in the way. */
+/** Which of `numbers` can go to `name`, and what's in the way. */
 export function planGive(
   tickets: { ticket: string; name: string }[],
-  start: string,
-  count: number,
+  numbers: string[],
   name: string,
 ): { tickets: string[]; taken: { ticket: string; name: string }[]; missing: string[] } {
   const byNumber = new Map(tickets.map((t) => [t.ticket, t]))
-  const wanted = Array.from({ length: count }, (_, i) => pad(Number(start) + i))
   return {
-    tickets: wanted.filter((n) => byNumber.has(n)),
-    taken: wanted
+    tickets: numbers.filter((n) => byNumber.has(n)),
+    taken: numbers
       .map((n) => byNumber.get(n))
       .filter((t): t is { ticket: string; name: string } => !!t && !!t.name.trim() && groupKey(t.name) !== groupKey(name))
       .map((t) => ({ ticket: t.ticket, name: t.name })),
-    missing: wanted.filter((n) => !byNumber.has(n)),
+    missing: numbers.filter((n) => !byNumber.has(n)),
   }
 }

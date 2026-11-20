@@ -182,7 +182,7 @@ function Guest({
             Cancel
           </button>
           {error && (
-            <span role="alert" className="text-sm font-semibold text-bad">
+            <span role="alert" className="text-sm font-semibold text-bad-text">
               {error}
             </span>
           )}
@@ -211,7 +211,7 @@ function Guest({
             : `Not arrived yet${t.info ? `. ${t.info}` : ''}`}
         </span>
         {error && (
-          <span role="alert" className="text-sm font-semibold text-bad">
+          <span role="alert" className="text-sm font-semibold text-bad-text">
             {error}
           </span>
         )}
@@ -236,7 +236,7 @@ function Guest({
                   act(() => undoCheckInAction(event, t.ticket), `Undid the check-in for ${label}.`)
               }}
               aria-label={`Undo check-in for ${label}`}
-              className={`${btn} border border-bad/40 text-bad hover:bg-bad/5`}
+              className={`${btn} border border-bad/40 text-bad-text hover:bg-bad/5`}
             >
               Undo
             </button>

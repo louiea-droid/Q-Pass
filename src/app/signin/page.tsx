@@ -18,7 +18,7 @@ export default async function SignIn() {
         <p className="text-[17px] leading-relaxed text-muted">Type your name and the passcode from your team leader.</p>
       </div>
       {setupError && (
-        <p role="alert" className="rounded-xl border border-bad p-3 text-sm text-bad">
+        <p role="alert" className="rounded-xl border border-bad p-3 text-sm text-bad-text">
           Can’t reach the database: {setupError}. Check the app’s settings (see README).
         </p>
       )}

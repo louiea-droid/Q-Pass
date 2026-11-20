@@ -79,7 +79,7 @@ export default function QrSheet({ event, from, to }: { event: string; from: stri
         </button>
         <p role="status" className="basis-full text-sm">
           {problem ? (
-            <span className="text-bad">{problem}</span>
+            <span className="text-bad-text">{problem}</span>
           ) : codes ? (
             `${codes.length} codes, about ${Math.ceil(codes.length / 35)} A4 page${codes.length > 35 ? 's' : ''}.`
           ) : (
