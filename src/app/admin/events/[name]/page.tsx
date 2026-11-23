@@ -18,17 +18,16 @@ export async function generateMetadata({ params }: PageProps<'/admin/events/[nam
   return { title: `${decode((await params).name)} · Q-Pass` }
 }
 
-/** One event: its details, shortcuts, report, and the edit / close controls. */
+/** One event: header with shortcuts, the report, and settings at the bottom (away from everyday clicks). */
 export default async function EventPage({ params }: PageProps<'/admin/events/[name]'>) {
   await requireStaff('admin')
   const event = await getEvent(decode((await params).name))
   if (!event) notFound()
   const tickets = await listTickets(event.name)
   const q = encodeURIComponent(event.name)
-  const open = event.status === 'open'
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-6">
       <Link href="/admin/events" className="flex w-fit items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="m15 6-6 6 6 6" />
@@ -36,18 +35,18 @@ export default async function EventPage({ params }: PageProps<'/admin/events/[na
         All events
       </Link>
 
-      <header className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4 sm:p-5">
-        <div className="flex items-start gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+        <div className="flex min-w-0 flex-1 items-start gap-4">
           {event.date && <DateTile date={event.date} />}
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <h1 className="min-w-0 text-2xl leading-tight font-extrabold wrap-anywhere">{event.name}</h1>
-              <StatusPill open={open} />
+              <StatusPill open={event.status === 'open'} />
             </div>
-            <EventMeta event={event} />
+            <EventMeta event={event} inline />
+            {event.details && <p className="max-w-prose text-[15px] leading-relaxed">{event.details}</p>}
           </div>
         </div>
-        {event.details && <p className="text-[15px] leading-relaxed">{event.details}</p>}
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/admin?event=${q}`}
@@ -62,10 +61,17 @@ export default async function EventPage({ params }: PageProps<'/admin/events/[na
             QR codes
           </Link>
         </div>
-        <EditEvent event={event} />
       </header>
 
       <EventReport event={event} tickets={tickets} />
+
+      <section aria-labelledby="settings-title" className="flex flex-col gap-1 rounded-2xl border border-line bg-surface p-4 sm:p-5">
+        <h2 id="settings-title" className="text-base font-extrabold">
+          Event settings
+        </h2>
+        <p className="text-sm text-muted">Change the date, venue or details, or close the event when it’s over.</p>
+        <EditEvent event={event} />
+      </section>
     </section>
   )
 }

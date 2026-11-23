@@ -46,11 +46,11 @@ function Meta({ label, icon, children }: { label: string; icon: React.ReactNode;
   )
 }
 
-/** Date, venue and ticket range. */
-export function EventMeta({ event: e }: { event: EventInfo }) {
+/** Date, venue and ticket range: stacked on the list cards, in one wrapping row on an event's page. */
+export function EventMeta({ event: e, inline = false }: { event: EventInfo; inline?: boolean }) {
   const count = Number(e.ticketTo) - Number(e.ticketFrom) + 1
   return (
-    <dl className="flex flex-col gap-1 text-sm text-muted">
+    <dl className={`text-sm text-muted ${inline ? 'flex flex-wrap gap-x-5 gap-y-1' : 'flex flex-col gap-1'}`}>
       {e.date && (
         <Meta label="Date" icon={<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18" /></>}>
           {fmtDate(e.date)}
