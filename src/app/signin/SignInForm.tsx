@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import Loading from '../Loading'
 import { signInAction } from './actions'
 
 const field =
@@ -12,6 +13,8 @@ export default function SignInForm() {
   const [show, setShow] = useState(false)
   return (
     <form action={action} className="flex flex-col gap-5">
+      {/* Covers the wait while the passcode is checked and the desk or scanner loads. */}
+      {pending && <Loading fullscreen label="Signing you in…" />}
       <label className="flex flex-col gap-2 font-bold">
         Your name
         <span className="relative">
