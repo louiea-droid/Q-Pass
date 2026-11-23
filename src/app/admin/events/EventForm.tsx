@@ -287,7 +287,7 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
           setTyped('')
           setDeleteError('')
         }}
-        className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-5 text-ink shadow-2xl backdrop:bg-black/60"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[min(30rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-5 text-ink shadow-2xl backdrop:bg-black/60 overflow-y-auto"
       >
         <form
           className="flex flex-col gap-4"
@@ -360,7 +360,7 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
           setDirty(false)
           setError(null)
         }}
-        className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-5 text-ink shadow-2xl backdrop:bg-black/50"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-5 text-ink shadow-2xl backdrop:bg-black/50 overflow-y-auto"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-0.5">

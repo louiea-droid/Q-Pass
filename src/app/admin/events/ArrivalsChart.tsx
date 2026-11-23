@@ -14,6 +14,8 @@ export default function ArrivalsChart({ buckets }: { buckets: { start: number; c
   if (!buckets.length) return <p className="text-sm text-muted">No one has checked in yet.</p>
   const max = Math.max(...buckets.map((b) => b.count))
   const peak = buckets.find((b) => b.count === max)!
+  // Labels on the hour, fewer when the range is long; none at the very end, where it would be cut off.
+  const labelEvery = 4 * Math.max(1, Math.ceil(buckets.length / 24))
   return (
     <figure className="flex flex-col gap-2">
       <figcaption className="text-sm text-muted">
@@ -26,7 +28,7 @@ export default function ArrivalsChart({ buckets }: { buckets: { start: number; c
           <span>0</span>
         </div>
         <div className="min-w-0 flex-1 overflow-x-auto">
-          <div className="flex h-40 min-w-full items-end gap-0.5 border-b border-line-strong" style={{ width: `${Math.max(buckets.length * 14, 100)}px` }}>
+          <div className="flex h-40 min-w-full items-end gap-0.5 border-b border-line-strong" style={{ width: `${buckets.length * 8}px` }}>
             {buckets.map((b) => (
               <div key={b.start} className="group relative flex h-full min-w-2 flex-1 items-end">
                 <div
@@ -40,9 +42,9 @@ export default function ArrivalsChart({ buckets }: { buckets: { start: number; c
               </div>
             ))}
           </div>
-          <div className="relative mt-1 h-4 text-xs text-muted" aria-hidden="true" style={{ width: `${Math.max(buckets.length * 14, 100)}px`, minWidth: '100%' }}>
+          <div className="relative mt-1 h-4 text-xs text-muted" aria-hidden="true" style={{ width: `${buckets.length * 8}px`, minWidth: '100%' }}>
             {buckets.map((b, i) =>
-              i % 4 === 0 ? (
+              i % labelEvery === 0 && i < buckets.length - 2 ? (
                 <span key={b.start} className="absolute whitespace-nowrap" style={{ left: `${(i / buckets.length) * 100}%` }}>
                   {time(b.start)}
                 </span>

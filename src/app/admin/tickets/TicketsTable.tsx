@@ -198,6 +198,9 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
           </button>
         </p>
       ) : (
+        <>
+        {/* On phones only Ticket and Name fit; say the rest is a swipe away. */}
+        <p className="-mb-1 text-xs text-muted sm:hidden">Swipe the table sideways to see details and notes.</p>
         <div className="relative max-h-[calc(100dvh-13rem)] overflow-auto rounded-xl border border-line">
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 z-10 bg-soft text-[13px] text-muted shadow-[0_1px_0_var(--line)]">
@@ -290,6 +293,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       <p role="status" className={`text-sm ${Object.values(rowState).includes('error') ? 'font-semibold text-bad-text' : 'text-muted'}`}>

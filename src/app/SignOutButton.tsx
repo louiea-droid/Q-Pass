@@ -27,7 +27,7 @@ export default function SignOutButton({ className = '' }: { className?: string }
             setUnsent(0)
           }
         }}
-        className="m-auto w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-5 text-left text-ink shadow-2xl backdrop:bg-black/50"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-5 text-left text-ink shadow-2xl backdrop:bg-black/50 overflow-y-auto"
       >
         <h2 id={`${id}-title`} className="text-lg font-extrabold">
           Sign out?

@@ -117,6 +117,8 @@ button:not(:disabled), [role="button"], summary, label:has(> input[type="radio"]
 @supports (appearance: base-select) {
   .select, .select::picker(select) { appearance: base-select; }
   .select { display: flex; align-items: center; } /* base-select lays the button out as a box; keep the text centred */
+  /* Long names fade out before the chevron (text-overflow: ellipsis has no effect on a base-select button). */
+  .select.fade-end { mask-image: linear-gradient(to right, #000 calc(100% - 64px), transparent calc(100% - 38px)); }
   .select::picker-icon { display: none; } /* Select.tsx draws its own chevron */
   .select::picker(select) {
     margin-block: 6px;

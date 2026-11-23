@@ -52,8 +52,8 @@ export default async function EventsPage() {
               >
                 {e.date && <DateTile date={e.date} />}
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
-                  <div className="flex items-start justify-between gap-3">
-                    <h2 className="min-w-0 text-lg leading-snug font-extrabold wrap-anywhere group-hover:underline">{e.name}</h2>
+                  <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:justify-between sm:gap-3">
+                    <h2 className="min-w-0 text-lg leading-snug font-extrabold wrap-break-word group-hover:underline">{e.name}</h2>
                     <StatusPill open={open} />
                   </div>
                   <EventMeta event={e} />

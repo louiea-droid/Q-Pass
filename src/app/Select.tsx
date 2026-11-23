@@ -26,7 +26,7 @@ export default function Select({
       )}
       <select
         {...props}
-        className={`select h-full w-full min-w-0 cursor-pointer appearance-none truncate rounded-xl bg-transparent font-semibold outline-none ${
+        className={`select ${compact ? '' : 'fade-end'} h-full w-full min-w-0 cursor-pointer appearance-none truncate rounded-xl bg-transparent font-semibold outline-none ${
           compact ? 'pr-8 pl-3 text-sm tabular-nums' : 'pr-10 text-[15px]'
         } ${icon ? 'pl-9' : compact ? '' : 'pl-4'}`}
       >

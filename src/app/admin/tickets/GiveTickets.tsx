@@ -80,7 +80,7 @@ export default function GiveTickets({
       aria-labelledby="give-title"
       onClose={onClose}
       onClick={(e) => e.target === e.currentTarget && !pending && dialog.current?.close()}
-      className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/50"
+      className="m-auto max-h-[calc(100dvh-2rem)] w-[min(34rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/50 overflow-y-auto"
     >
     <form
       className="flex flex-col gap-4 p-5"
