@@ -23,17 +23,6 @@ export async function manualScanAction(event: string, ticketInput: string, by?: 
   return checkIn({ payload: null, event, ticket, staff, method: 'manual' })
 }
 
-/** Scanners may only name a ticket that has no name yet; admins can always rename. */
-export async function setNameAction(event: string, ticket: string, name: string): Promise<void> {
-  const staff = await requireStaff('scanner')
-  if (staff.role !== 'admin') {
-    const t = (await listTickets(event)).find((x) => x.ticket === ticket)
-    if (!t) throw new Error('Ticket not found')
-    if (t.name) throw new Error('This ticket already has a name')
-  }
-  await updateTicket(event, ticket, { name: name.trim() })
-}
-
 export type ActionResult = { error?: string }
 
 /** Production hides thrown server-action messages, so return them for the UI to show. */

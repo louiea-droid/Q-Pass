@@ -3,7 +3,7 @@
 import type { Html5Qrcode } from 'html5-qrcode'
 import Link from 'next/link'
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { manualScanAction, scanAction, setNameAction } from '../actions'
+import { manualScanAction, scanAction } from '../actions'
 import Select from '../Select'
 import SignOutButton from '../SignOutButton'
 import { headline } from '@/lib/display'
@@ -385,10 +385,10 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 {error}
               </p>
             )}
-            {!busy && outcome && <Result outcome={outcome} event={event} />}
+            {!busy && outcome && <Result outcome={outcome} />}
             {!busy && savedOffline !== null && (
-              // Amber, not green: nobody has checked this ticket yet. Same size as the green and red cards.
-              <section className="flex min-h-73 flex-col gap-2 rounded-3xl bg-note p-5.5 text-note-ink">
+              // Amber, not green: nobody has checked this ticket yet.
+              <section className="flex flex-col gap-1.5 rounded-3xl bg-note p-4 text-note-ink">
                 <span className="flex items-center gap-2.5 text-lg font-bold">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 20 0M5 12.9a10 10 0 0 1 14 0M3 3l18 18" />
@@ -401,7 +401,6 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 <span className="text-base leading-relaxed">
                   It will be checked when the internet is back. Let them in.
                 </span>
-                <span className="mt-auto border-t border-current/25 pt-3 text-[15px] leading-relaxed">Ready for the next person.</span>
               </section>
             )}
           </div>
@@ -468,10 +467,10 @@ const REJECT_TITLE: Record<string, string> = {
   not_found: 'Not a valid ticket',
 }
 
-function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
+function Result({ outcome }: { outcome: ScanOutcome }) {
   if (outcome.result === 'checked_in')
     return (
-      <section className="flex min-h-73 flex-col gap-2 rounded-3xl bg-ok p-5.5 text-on-flag">
+      <section className="flex flex-col gap-1.5 rounded-3xl bg-ok p-4 text-on-flag">
         <span className="flex items-center gap-2.5 text-lg font-bold">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10" />
@@ -482,15 +481,12 @@ function Result({ outcome, event }: { outcome: ScanOutcome; event: string }) {
         <span className="text-2xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
         {outcome.name && <span className="text-base text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
         {outcome.group && <GroupLine group={outcome.group} />}
-        {!outcome.name && outcome.ticket && <AddName event={event} ticket={outcome.ticket} />}
-        {/* Same ending as the red card, so both results are the same size. */}
-        <span className="mt-auto border-t border-white/25 pt-3 text-[15px] leading-relaxed">Ready for the next person.</span>
       </section>
     )
 
   const used = outcome.result === 'already_checked_in'
   return (
-    <section role="alert" className="flex min-h-73 flex-col gap-2 rounded-3xl bg-bad p-5.5 text-on-flag">
+    <section role="alert" className="flex flex-col gap-1.5 rounded-3xl bg-bad p-4 text-on-flag">
       <span className="flex items-center gap-2.5 text-lg font-bold">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10" />
@@ -525,48 +521,6 @@ function GroupLine({ group }: { group: { total: number; here: number } }) {
       </svg>
       {group.here} of {group.total} in this group are here
     </span>
-  )
-}
-
-function AddName({ event, ticket }: { event: string; ticket: string }) {
-  const [name, setName] = useState('')
-  const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  if (state === 'saved') return <p className="mt-2 font-semibold">Saved {name} to ticket {ticket}.</p>
-  return (
-    <form
-      className="mt-2 flex flex-wrap gap-2"
-      onSubmit={async (e) => {
-        e.preventDefault()
-        if (!name.trim()) return
-        setState('saving')
-        try {
-          await setNameAction(event, ticket, name)
-          setState('saved')
-        } catch {
-          setState('error')
-        }
-      }}
-    >
-      <label htmlFor="add-name" className="sr-only">
-        Name for ticket {ticket} (optional)
-      </label>
-      <input
-        id="add-name"
-        autoComplete="off"
-        placeholder="Add a name (optional)"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="h-12 min-w-0 flex-1 rounded-xl bg-surface px-3 text-base text-ink"
-      />
-      <button disabled={state === 'saving'} className="h-12 rounded-xl bg-surface px-4 font-bold text-ink disabled:opacity-60">
-        {state === 'saving' ? 'Saving…' : 'Save'}
-      </button>
-      {state === 'error' && (
-        <span role="alert" className="basis-full text-sm font-semibold">
-          Couldn’t save the name. Try again.
-        </span>
-      )}
-    </form>
   )
 }
 
