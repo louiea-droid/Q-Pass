@@ -67,6 +67,32 @@ const OPS = {
     return null
   },
 
+  // Removes an event for good: its row on Events, its ticket tab, and its rows on Log.
+  deleteEvent: ({ name }) => {
+    const lock = LockService.getScriptLock()
+    lock.waitLock(20000)
+    try {
+      const events = ss().getSheetByName('Events')
+      const names = events.getRange(2, 1, Math.max(events.getLastRow() - 1, 1), 1).getDisplayValues()
+      for (let i = names.length - 1; i >= 0; i--) if (names[i][0] === name) events.deleteRow(i + 2)
+      const tab = ss().getSheetByName(name)
+      if (tab) ss().deleteSheet(tab)
+      const log = ss().getSheetByName('Log')
+      if (log && log.getLastRow() > 1) {
+        const width = log.getLastColumn()
+        const rows = log.getRange(2, 1, log.getLastRow() - 1, width).getDisplayValues()
+        const keep = rows.filter((r) => r[1] !== name) // column B is the event
+        if (keep.length !== rows.length) {
+          log.getRange(2, 1, rows.length, width).clearContent()
+          if (keep.length) log.getRange(2, 1, keep.length, width).setNumberFormat('@').setValues(keep)
+        }
+      }
+    } finally {
+      lock.releaseLock()
+    }
+    return null
+  },
+
   addSheet: ({ title, headers, rowCount }) => {
     const sh = ss().insertSheet(title)
     ensureRows(sh, rowCount)

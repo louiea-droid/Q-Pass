@@ -156,3 +156,20 @@ test('a single-ticket guest has no group line, and a failed group lookup never b
   expect(r.result).toBe('checked_in')
   expect(r.group).toBeUndefined()
 })
+
+test('deleting an event removes its scan log, then the event (its tickets go with it)', async () => {
+  const { deleteEvent } = await import('./store-supabase')
+  await deleteEvent('TAC Gala')
+  const dels = reqs.filter((q) => q.method === 'DELETE')
+  expect(dels.map((q) => [q.path, q.query.get('event') ?? q.query.get('name')])).toEqual([
+    ['log', 'eq.TAC Gala'],
+    ['events', 'eq.TAC Gala'],
+  ])
+})
+
+test('a scan for a deleted event is answered red, not thrown (so offline scans never jam the queue)', async () => {
+  eventsRows = []
+  const { checkIn } = await import('./store-supabase')
+  const r = await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
+  expect(r).toMatchObject({ result: 'event_closed', message: 'This event was deleted' })
+})

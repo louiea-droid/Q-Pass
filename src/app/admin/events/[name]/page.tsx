@@ -60,7 +60,7 @@ export default async function EventPage({ params }: PageProps<'/admin/events/[na
           <Link href={`/admin/qr?event=${q}`} className={secondaryLink}>
             QR codes
           </Link>
-          <EditEvent event={event} />
+          <EditEvent event={event} tickets={tickets.length} checkedIn={tickets.filter((t) => t.checkedInAt).length} />
         </div>
       </header>
 

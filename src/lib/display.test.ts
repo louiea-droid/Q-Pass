@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { arrivalBuckets, headline, isGiven, matchTicket, noShows } from './display'
+import { arrivalBuckets, headline, isGiven, matchTicket, noShows, pickableEvents } from './display'
 
 test('a named ticket is headed by the name', () => {
   expect(headline({ ticket: '0057', name: 'Juan Dela Cruz' })).toBe('Juan Dela Cruz')
@@ -70,4 +70,11 @@ test('noShows: named tickets that never checked in, by ticket number', () => {
     '0001',
     '0003',
   ])
+})
+
+test('pickableEvents: only open events, plus the one on screen even if closed', () => {
+  const ev = (name: string, status: 'open' | 'closed') => ({ name, status })
+  const list = [ev('Gala', 'open'), ev('Camp', 'closed'), ev('Retreat', 'open')]
+  expect(pickableEvents(list, 'Gala')).toEqual(['Gala', 'Retreat'])
+  expect(pickableEvents(list, 'Camp')).toEqual(['Gala', 'Camp', 'Retreat'])
 })

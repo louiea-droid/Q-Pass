@@ -94,6 +94,19 @@ export async function updateEvent(name: string, patch: Partial<Omit<EventInfo, '
   eventsCache = undefined
 }
 
+/** Deletes the event row, its ticket tab and its log rows, in one script call. */
+export async function deleteEvent(name: string): Promise<void> {
+  try {
+    await gas<null>('deleteEvent', { name })
+  } catch (e) {
+    if (/unknown operation/i.test((e as Error).message))
+      throw new Error('To delete events, update the Apps Script: paste the new apps-script/Code.gs into the Sheet and deploy again.')
+    throw e
+  } finally {
+    eventsCache = undefined
+  }
+}
+
 function toTicket(r: string[]): Ticket {
   const [ticket = '', name = '', info = '', notes = '', checkedInAt = '', checkedInBy = '', method = ''] = r
   return {
@@ -131,7 +144,8 @@ export async function checkIn(args: {
   method: 'QR' | 'manual'
 }): Promise<ScanOutcome> {
   const event = await getEvent(args.event)
-  if (!event) throw new Error('Event not found')
+  // Deleted (e.g. a scan saved offline before the event was removed): answer red instead of throwing, so it is not retried forever.
+  if (!event) return { result: 'event_closed', message: 'This event was deleted' }
   const parsed = args.method === 'QR' ? parsePayload(args.payload ?? '') : null
   const scannedEvent = args.method === 'manual' ? event.name : (parsed?.event ?? null)
   const ticketNo = args.method === 'manual' ? args.ticket : parsed?.ticket

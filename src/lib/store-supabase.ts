@@ -84,6 +84,12 @@ export async function updateEvent(name: string, patch: Partial<Omit<EventInfo, '
   await sb(`events?name=eq.${q(name)}`, { method: 'PATCH', body, headers: { Prefer: 'return=minimal' } })
 }
 
+/** Deletes the event and everything under it: its scan log, then the event row (tickets cascade). */
+export async function deleteEvent(name: string): Promise<void> {
+  await sb(`log?event=eq.${q(name)}`, { method: 'DELETE' })
+  await sb(`events?name=eq.${q(name)}`, { method: 'DELETE' })
+}
+
 const toTicket = (r: Row): Ticket => ({
   ticket: String(r.ticket), name: String(r.name ?? ''), info: String(r.info ?? ''), notes: String(r.notes ?? ''),
   checkedInAt: r.checked_in_at ? String(r.checked_in_at) : '', checkedInBy: String(r.checked_in_by ?? ''),
@@ -124,7 +130,8 @@ export async function checkIn(args: {
   method: 'QR' | 'manual'
 }): Promise<ScanOutcome> {
   const event = await getEvent(args.event)
-  if (!event) throw new Error('Event not found')
+  // Deleted (e.g. a scan saved offline before the event was removed): answer red instead of throwing, so it is not retried forever.
+  if (!event) return { result: 'event_closed', message: 'This event was deleted' }
   const parsed = args.method === 'QR' ? parsePayload(args.payload ?? '') : null
   const scannedEvent = args.method === 'manual' ? event.name : (parsed?.event ?? null)
   const ticketNo = args.method === 'manual' ? args.ticket : parsed?.ticket

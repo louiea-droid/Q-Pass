@@ -78,3 +78,25 @@ test('script errors surface their message', async () => {
   const { listEvents } = await import('./store-sheets')
   await expect(listEvents()).rejects.toThrow('Wrong secret')
 })
+
+test('deleting an event is one script call', async () => {
+  handlers.deleteEvent = () => null
+  const { deleteEvent } = await import('./store-sheets')
+  await deleteEvent('TAC Gala')
+  expect(calls.find((c) => c.op === 'deleteEvent')!.args).toEqual({ name: 'TAC Gala' })
+})
+
+test('an older Apps Script without deleteEvent gives a clear message', async () => {
+  handlers.deleteEvent = () => {
+    throw new Error('Unknown operation deleteEvent')
+  }
+  const { deleteEvent } = await import('./store-sheets')
+  await expect(deleteEvent('TAC Gala')).rejects.toThrow(/update the Apps Script/i)
+})
+
+test('a scan for a deleted event is answered red, not thrown', async () => {
+  handlers.read = () => []
+  const { checkIn } = await import('./store-sheets')
+  const r = await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
+  expect(r).toMatchObject({ result: 'event_closed', message: 'This event was deleted' })
+})

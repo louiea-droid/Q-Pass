@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useId, useRef, useState, useTransition } from 'react'
-import { createEventAction, updateEventAction } from '../../actions'
+import { createEventAction, deleteEventAction, updateEventAction } from '../../actions'
 import { isValidEventName, normalizeTicket } from '@/lib/qr'
 import type { EventInfo } from '@/lib/types'
 
@@ -173,11 +173,23 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
  * Header controls on an event's page: "Edit" opens a dialog for date, venue and details;
  * the ⋯ menu holds Close / Reopen, with a second tap to confirm closing.
  */
-export function EditEvent({ event }: { event: EventInfo }) {
+export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventInfo; tickets?: number; checkedIn?: number }) {
   const router = useRouter()
   const id = useId()
   const dialogId = `${id}-edit`
   const menuId = `${id}-menu`
+  const deleteId = `${id}-delete`
+  const [typed, setTyped] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+
+  const remove = () =>
+    start(async () => {
+      setDeleteError('')
+      const r = await deleteEventAction(event.name, typed).catch(() => ({ error: 'Couldn’t delete. Try again.' }))
+      if (r.error) return setDeleteError(r.error)
+      router.push('/admin/events')
+      router.refresh()
+    })
   const moreRef = useRef<HTMLButtonElement>(null)
   const [error, setError] = useState<{ where: 'details' | 'status'; text: string } | null>(null)
   const [dirty, setDirty] = useState(false)
@@ -259,6 +271,84 @@ export function EditEvent({ event }: { event: EventInfo }) {
           </button>
         )}
         {error?.where === 'status' && <p role="alert" className="px-3 py-2 text-sm font-semibold text-bad-text">{error.text}</p>}
+        <div className="my-1 border-t border-line" />
+        <button type="button" role="menuitem" popoverTarget={deleteId} className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2.5 text-left hover:bg-soft">
+          <span className="text-[15px] font-semibold text-bad-text">Delete event…</span>
+          <span className="text-xs text-muted">Removes it with all tickets and check-ins.</span>
+        </button>
+      </div>
+
+      {/* Delete dialog: the Delete button only works once the exact event name is typed. */}
+      <div
+        id={deleteId}
+        popover="auto"
+        role="alertdialog"
+        aria-labelledby={`${deleteId}-title`}
+        aria-describedby={`${deleteId}-desc`}
+        onToggle={(e) => {
+          if (e.newState !== 'open') return
+          setTyped('')
+          setDeleteError('')
+        }}
+        className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-5 text-ink shadow-2xl backdrop:bg-black/60"
+      >
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(ev) => {
+            ev.preventDefault()
+            if (typed === event.name) remove()
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-bad/15 text-bad-text" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />
+              </svg>
+            </span>
+            <div className="flex flex-col gap-1">
+              <h2 id={`${deleteId}-title`} className="text-lg font-extrabold">
+                Delete this event?
+              </h2>
+              <p id={`${deleteId}-desc`} className="text-sm text-muted">
+                This permanently removes <strong className="text-ink">{event.name}</strong> with its{' '}
+                {tickets.toLocaleString('en')} tickets, {checkedIn.toLocaleString('en')} check-ins and the scan log. It can’t be undone,
+                and printed QR codes for it stop working.
+              </p>
+            </div>
+          </div>
+          <a
+            href={`/api/export?event=${encodeURIComponent(event.name)}`}
+            className="flex w-fit items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4 hover:no-underline"
+          >
+            Download the ticket list first
+          </a>
+          <label className={label}>
+            <span>
+              Type <span className="rounded bg-soft px-1.5 py-0.5 font-mono text-[13px]">{event.name}</span> to confirm
+            </span>
+            <input
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              aria-invalid={typed !== '' && typed !== event.name}
+              className={input}
+            />
+          </label>
+          {deleteError && <p role="alert" className="text-sm font-semibold text-bad-text">{deleteError}</p>}
+          <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+            <button type="button" popoverTarget={deleteId} popoverTargetAction="hide" className={secondary}>
+              Cancel
+            </button>
+            <button
+              disabled={pending || typed !== event.name}
+              className="flex h-10 items-center rounded-lg bg-bad px-4 text-[15px] font-bold text-on-flag transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {pending ? 'Deleting…' : 'Delete event'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Edit dialog */}

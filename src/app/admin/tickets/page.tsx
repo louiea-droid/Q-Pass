@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { requireStaff } from '@/lib/guard'
+import { pickableEvents } from '@/lib/display'
 import { listEvents, listTickets } from '@/lib/store'
 import EventPicker from '../EventPicker'
 import ImportGuests from './ImportGuests'
@@ -33,7 +34,7 @@ export default async function TicketsPage({ searchParams }: PageProps<'/admin/ti
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <EventPicker events={events.map((e) => e.name)} value={event.name} />
+          <EventPicker events={pickableEvents(events, event.name)} value={event.name} />
           <ImportGuests event={event.name} closed={event.status === 'closed'} />
           <a
             href={`/api/export?event=${encodeURIComponent(event.name)}`}

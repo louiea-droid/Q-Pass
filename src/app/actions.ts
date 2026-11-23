@@ -4,7 +4,7 @@ import { requireStaff } from '@/lib/guard'
 import { parseGuestCsv, planImport } from '@/lib/csv'
 import { planGive } from '@/lib/groups'
 import { normalizeTicket } from '@/lib/qr'
-import { checkIn, createEvent, getEvent, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
+import { checkIn, createEvent, deleteEvent, getEvent, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
 import type { EventInfo, ScanOutcome, Staff } from '@/lib/types'
 
 // A scan saved offline is sent later, maybe after someone else signed in on that phone; `by` keeps the original
@@ -137,4 +137,14 @@ export async function importGuestsAction(
   } catch (e) {
     return { error: (e as Error).message || 'Something went wrong. Try again.' }
   }
+}
+
+/** Deletes an event with its tickets, check-ins and scan log. `typed` must be the exact name (checked here too). */
+export async function deleteEventAction(name: string, typed: string): Promise<ActionResult> {
+  await requireStaff('admin')
+  if (typed !== name) return { error: 'Type the event name exactly as shown to delete it.' }
+  return attempt(async () => {
+    if (!(await getEvent(name))) throw new Error('Event not found')
+    await deleteEvent(name)
+  })
 }

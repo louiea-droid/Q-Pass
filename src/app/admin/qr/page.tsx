@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { requireStaff } from '@/lib/guard'
+import { pickableEvents } from '@/lib/display'
 import { listEvents } from '@/lib/store'
 import EventPicker from '../EventPicker'
 import QrCodes from './QrCodes'
@@ -30,7 +31,7 @@ export default async function QrPage({ searchParams }: PageProps<'/admin/qr'>) {
             {event.name}, tickets {event.ticketFrom} to {event.ticketTo}. Each image has its ticket number under the code.
           </p>
         </div>
-        <EventPicker events={events.map((e) => e.name)} value={event.name} />
+        <EventPicker events={pickableEvents(events, event.name)} value={event.name} />
       </div>
       <QrCodes key={event.name} event={event.name} from={event.ticketFrom} to={event.ticketTo} />
     </>
