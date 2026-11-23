@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { arrivalBuckets, arrivalCounts, noShows } from '@/lib/display'
 import type { EventInfo, Ticket } from '@/lib/types'
 import ArrivalsChart from './ArrivalsChart'
@@ -17,17 +16,9 @@ export default function EventReport({ event, tickets }: { event: EventInfo; tick
   ] as const
   return (
     <section id="report" aria-labelledby="report-title" className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-4 sm:p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <h2 id="report-title" className="text-xl font-extrabold wrap-anywhere">
-            Report: {event.name}
-          </h2>
-          {event.venue && <p className="text-sm text-muted">{event.venue}</p>}
-        </div>
-        <Link href="/admin/events" className="flex h-10 items-center rounded-lg border border-line-strong px-3.5 text-[15px] font-semibold hover:bg-soft">
-          Close report
-        </Link>
-      </div>
+      <h2 id="report-title" className="text-xl font-extrabold">
+        Report
+      </h2>
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(([label, n]) => (
