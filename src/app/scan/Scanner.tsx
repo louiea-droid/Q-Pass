@@ -4,7 +4,7 @@ import type { Html5Qrcode } from 'html5-qrcode'
 import Link from 'next/link'
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { manualScanAction, scanAction, setNameAction } from '../actions'
-import { signOutAction } from '../signin/actions'
+import SignOutButton from '../SignOutButton'
 import { headline } from '@/lib/display'
 import { type QueuedScan, drain, enqueue, isNetworkError, readQueue } from '@/lib/offline'
 import { normalizeTicket, parsePayload } from '@/lib/qr'
@@ -277,9 +277,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 Check-in desk
               </Link>
             )}
-            <form action={signOutAction}>
-              <button className="w-full rounded-xl px-3 py-3 text-left font-semibold hover:bg-soft">Sign out</button>
-            </form>
+            <SignOutButton className="w-full rounded-xl px-3 py-3 text-left font-semibold hover:bg-soft" />
           </div>
         </details>
       </header>

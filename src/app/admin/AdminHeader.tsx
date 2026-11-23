@@ -1,5 +1,5 @@
 import Logo from '../Logo'
-import { signOutAction } from '../signin/actions'
+import SignOutButton from '../SignOutButton'
 import ThemeToggle from '../ThemeToggle'
 import type { Staff } from '@/lib/types'
 import AdminNav from './AdminNav'
@@ -15,13 +15,11 @@ export default function AdminHeader({ staff }: { staff: Staff }) {
         </span>
         {/* Below desktop width the menu is a floating bar at the bottom (AdminNav), so this stays one slim row.
             No blur on the header there: it would pin that fixed bar to the header instead of the screen. */}
-        <form action={signOutAction} className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3 lg:order-last">
+        <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3 lg:order-last">
           <ThemeToggle />
           <span className="hidden truncate text-sm text-muted sm:inline">{staff.name}, admin</span>
-          <button className="h-10 shrink-0 rounded-full border border-line-strong px-3.5 text-sm font-semibold transition-colors duration-200 hover:bg-soft">
-            Sign out
-          </button>
-        </form>
+          <SignOutButton className="h-10 shrink-0 rounded-full border border-line-strong px-3.5 text-sm font-semibold transition-colors duration-200 hover:bg-soft" />
+        </div>
         <AdminNav />
       </div>
     </header>
