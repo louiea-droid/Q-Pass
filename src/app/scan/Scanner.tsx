@@ -2,7 +2,7 @@
 
 import type { Html5Qrcode } from 'html5-qrcode'
 import Link from 'next/link'
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { manualScanAction, scanAction, setNameAction } from '../actions'
 import { signOutAction } from '../signin/actions'
 import { headline } from '@/lib/display'
@@ -26,7 +26,7 @@ const readSaved = () => {
 }
 const noSubscribe = () => () => {}
 
-export default function Scanner({ events, staff }: { events: string[]; staff: Staff }) {
+export default function Scanner({ events, staff, share }: { events: string[]; staff: Staff; share?: ReactNode }) {
   const [chosen, setChosen] = useState<string | null>(null)
   // The event chosen last time on this phone (empty on the server).
   const saved = useSyncExternalStore(noSubscribe, readSaved, () => '')
@@ -170,6 +170,7 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
             <path d="m6 9 6 6 6-6" />
           </svg>
         </label>
+        {share}
         {/* On computers an admin has these in the admin header above. */}
         <span className={`contents ${staff.role === 'admin' ? 'lg:hidden' : ''}`}>
           <ThemeToggle />
@@ -215,7 +216,7 @@ export default function Scanner({ events, staff }: { events: string[]; staff: St
             </span>
           </div>
 
-          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#12142a] ${outcome || error ? 'h-64 lg:h-56' : 'h-96 lg:h-80'} transition-[height] duration-300`}>
+          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#141518] ${outcome || error ? 'h-64 lg:h-56' : 'h-96 lg:h-80'} transition-[height] duration-300`}>
             <div id="reader" className="size-full [&_video]:size-full [&_video]:object-cover" />
             <svg className={`pointer-events-none absolute inset-0 m-auto ${paused ? 'opacity-40' : ''}`} width="170" height="170" viewBox="0 0 200 200" fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" aria-hidden="true">
               <path d="M8 48V20a12 12 0 0 1 12-12h28M152 8h28a12 12 0 0 1 12 12v28M192 152v28a12 12 0 0 1-12 12h-28M48 192H20a12 12 0 0 1-12-12v-28" />

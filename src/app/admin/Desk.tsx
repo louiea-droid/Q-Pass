@@ -85,9 +85,12 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
         <GuestList event={event} tickets={tickets} readOnly={readOnly} />
         <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-5">
           <section aria-labelledby="live" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-4 sm:p-5">
-            <h2 id="live" className="text-lg font-extrabold">
-              At the door now
-            </h2>
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 id="live" className="text-lg font-extrabold">
+                Check-in log
+              </h2>
+              {stats && stats.recent.length > 0 && <span className="text-[13px] text-muted">Latest {Math.min(stats.recent.length, 12)} scans</span>}
+            </div>
             {/* Fixed height, scrolls inside: new scans never push the cards below it down. */}
             <div className="h-80 overflow-y-auto" tabIndex={0} role="region" aria-label="Latest scans">
             {!stats ? (
@@ -98,20 +101,32 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
               <ol className="flex flex-col">
                 {stats.recent.slice(0, 12).map((r, i) => {
                   const ok = r.result === 'checked_in'
-                  const label = r.ticket ? headline({ ticket: r.ticket, name: names.get(r.ticket) }) : 'Unreadable code'
+                  const name = r.ticket ? names.get(r.ticket)?.trim() : ''
+                  const label = r.ticket ? headline({ ticket: r.ticket, name }) : 'Unreadable code'
+                  // Ticket number under a name, so the same guest scanned twice is easy to spot.
+                  const ref = [name && `Ticket ${r.ticket}`, r.method === 'manual' && 'typed in'].filter(Boolean).join(' · ')
                   return (
-                    <li key={`${r.time}-${i}`} className="flex items-center gap-2.5 border-b border-line py-2 last:border-0">
+                    <li key={`${r.time}-${i}`} className="flex items-center gap-3 border-b border-line py-2.5 last:border-0">
                       <span className={`size-2.5 shrink-0 rounded-full ${ok ? 'bg-ok' : r.result === 'undone' ? 'bg-line-strong' : 'bg-bad'}`} aria-hidden="true" />
-                      <span className="flex min-w-0 flex-1 flex-col text-[15px]">
-                        <strong className="truncate">{label}</strong>
-                        {!ok && (
-                          <span className={`text-[13px] font-semibold first-letter:uppercase ${r.result === 'undone' ? 'text-muted' : 'text-bad-text'}`}>
-                            {RESULT_TEXT[r.result]}
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <strong className="truncate text-[15px]">{label}</strong>
+                        {(ref || !ok) && (
+                          <span className="text-[13px] text-muted">
+                            {!ok && (
+                              <span className={`inline-block font-semibold first-letter:uppercase ${r.result === 'undone' ? '' : 'text-bad-text'}`}>
+                                {RESULT_TEXT[r.result]}
+                              </span>
+                            )}
+                            {!ok && ref && ' · '}
+                            {ref}
                           </span>
                         )}
                       </span>
-                      <span className="shrink-0 text-[13px] text-muted">
-                        {r.staffName}, {time(r.time)}
+                      <span className="flex shrink-0 flex-col items-end text-[13px]">
+                        <time dateTime={r.time} className="font-semibold tabular-nums">
+                          {time(r.time)}
+                        </time>
+                        <span className="max-w-28 truncate text-muted">by {r.staffName || 'Unknown'}</span>
                       </span>
                     </li>
                   )

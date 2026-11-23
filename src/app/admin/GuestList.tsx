@@ -58,7 +58,7 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
         {FILTERS.map((f) => (
           <label
             key={f.id}
-            className={`flex h-8 items-center rounded-full border px-3 text-[13px] font-semibold transition-colors duration-200 has-focus-visible:outline-3 has-focus-visible:outline-gold ${
+            className={`flex h-8 items-center rounded-full border px-3 text-[13px] font-semibold transition-colors duration-200 has-focus-visible:outline-3 has-focus-visible:outline-ring ${
               filter === f.id ? 'border-primary bg-primary text-primary-ink' : 'border-line-strong bg-surface hover:bg-soft'
             }`}
           >

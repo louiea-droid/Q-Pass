@@ -9,8 +9,8 @@ export default function AdminHeader({ staff }: { staff: Staff }) {
   return (
     <header className="no-print z-30 border-b border-line bg-surface/95 lg:sticky lg:top-0 lg:backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 px-4 py-2.5 sm:px-6 lg:py-3">
-        <span className="flex items-center gap-2.5 text-lg font-extrabold text-primary">
-          <Logo size={30} />
+        <span className="flex items-center gap-3 text-xl font-extrabold text-primary">
+          <Logo size={40} />
           Q-Pass
         </span>
         {/* Below desktop width the menu is a floating bar at the bottom (AdminNav), so this stays one slim row.

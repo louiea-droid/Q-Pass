@@ -1,22 +1,25 @@
 @import "tailwindcss";
 
-/* Deep indigo for actions, a touch of harvest gold, green/red only for scan results. */
+/* Graphite and slate with a lime accent; green/red stay reserved for scan results. */
 :root {
-  --paper: #f6f7fb;
+  --paper: #f3f5f4;
   --surface: #ffffff;
-  --ink: #1b1e3c;
-  --muted: #4a4f6e;
-  --line: #e4e6ef;
-  --line-strong: #d5d8e6;
-  --primary: #2e3a87;
-  --primary-hover: #1f2866;
+  --ink: #1b1c1f;
+  --muted: #4e5a65;
+  --line: #e2e6e9;
+  --line-strong: #cfd6dc;
+  --primary: #263746;
+  --primary-hover: #1b2733;
   --primary-ink: #ffffff;
-  --soft: #eceef8;
+  --soft: #e8edf0;
   --gold: #e2b33c;
-  --ok: #146c3a;
-  --ok-text: #146c3a;
-  --bad-text: #b42318;
-  --bad: #b42318;
+  --ring: #263746;
+  --accent: #a8f06a; /* lime: fills only, always with --accent-ink text (too pale for text on white) */
+  --accent-ink: #1b1c1f;
+  --ok: #17804a;
+  --ok-text: #17804a;
+  --bad-text: #c4302b;
+  --bad: #c4302b;
   --on-flag: #ffffff;
   --note: #fff7e0;
   --note-ink: #5c4508;
@@ -25,19 +28,20 @@
 /* Dark: set by the theme switch, or the device setting (see layout.tsx). */
 :root[data-theme="dark"] {
   color-scheme: dark;
-    --paper: #0f1124;
-    --surface: #181b33;
-    --ink: #e8eaf6;
-    --muted: #a9aecb;
-    --line: #2c3050;
-    --line-strong: #3a3f63;
-    --primary: #9aa6f2;
-    --primary-hover: #b6befa;
-    --primary-ink: #10122a;
-    --soft: #23284a;
+    --paper: #1b1c1f;
+    --surface: #263746;
+    --ink: #eef2f4;
+    --muted: #a9b8c5;
+    --line: #33475a;
+    --line-strong: #42586c;
+    --primary: #a8f06a;
+    --primary-hover: #bdf590;
+    --primary-ink: #1b1c1f;
+    --soft: #2f4356;
+    --ring: #a8f06a;
     --ok-text: #6ee7a0;
     --bad-text: #fca5a5;
-    --note: #2e2611;
+    --note: #2e2a14;
     --note-ink: #f3dfa6;
 }
 
@@ -53,6 +57,9 @@
   --color-primary-ink: var(--primary-ink);
   --color-soft: var(--soft);
   --color-gold: var(--gold);
+  --color-ring: var(--ring);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-ok: var(--ok);
   --color-ok-text: var(--ok-text);
   --color-bad-text: var(--bad-text);
@@ -93,7 +100,7 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid var(--gold);
+  outline: 3px solid var(--ring);
   outline-offset: 2px;
 }
 

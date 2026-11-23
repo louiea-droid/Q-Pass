@@ -55,7 +55,7 @@ export default function AdminNav() {
             href={n.href}
             aria-current={current(n.href) ? 'page' : undefined}
             className={`rounded-lg px-3 py-2 text-[15px] font-semibold whitespace-nowrap transition-colors duration-200 ${
-              current(n.href) ? 'bg-soft text-primary' : 'text-muted hover:bg-soft hover:text-ink'
+              current(n.href) ? 'bg-accent text-accent-ink' : 'text-muted hover:bg-soft hover:text-ink'
             }`}
           >
             {n.label}
@@ -82,7 +82,7 @@ export function TabBar({ className = '' }: { className?: string }) {
             href={n.href}
             aria-current={on ? 'page' : undefined}
             className={`flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-bold transition-colors duration-200 ${
-              on ? 'bg-primary text-primary-ink' : 'text-muted hover:bg-soft hover:text-ink'
+              on ? 'bg-accent text-accent-ink' : 'text-muted hover:bg-soft hover:text-ink'
             }`}
           >
             {n.icon}
