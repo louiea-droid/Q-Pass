@@ -6,6 +6,7 @@ import { useId, useRef, useState, useTransition } from 'react'
 import { createEventAction, deleteEventAction, updateEventAction } from '../../actions'
 import { isValidEventName, normalizeTicket } from '@/lib/qr'
 import type { EventInfo } from '@/lib/types'
+import { toast } from '../../toast'
 
 const input =
   'h-10 w-full rounded-lg border border-line-strong bg-paper px-3 text-[15px] font-medium text-ink focus:border-primary focus:outline-none'
@@ -187,6 +188,7 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
       setDeleteError('')
       const r = await deleteEventAction(event.name, typed).catch(() => ({ error: 'Couldn’t delete. Try again.' }))
       if (r.error) return setDeleteError(r.error)
+      toast(`Deleted ${event.name}.`)
       router.push('/admin/events')
       router.refresh()
     })
@@ -203,6 +205,7 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
       setError(null)
       const r = await updateEventAction(event.name, patch).catch(() => ({ error: 'Couldn’t save. Try again.' }))
       if (r.error) return setError({ where, text: r.error })
+      toast(patch.status === 'closed' ? 'Event closed. Scanning is off.' : patch.status === 'open' ? 'Event reopened.' : 'Saved the event details.')
       document.getElementById(where === 'details' ? dialogId : menuId)?.hidePopover()
       router.refresh()
     })

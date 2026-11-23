@@ -6,6 +6,7 @@ import { parseTicketList } from '@/lib/groups'
 import { makePayload, ticketRange } from '@/lib/qr'
 import { zip } from '@/lib/zip'
 import Pager from '../Pager'
+import { toast } from '../../toast'
 
 const QR_PX = 480
 const LABEL_PX = 96
@@ -61,7 +62,6 @@ export default function QrCodes({ event, from, to }: { event: string; from: stri
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
   const [busy, setBusy] = useState<{ done: number; total: number } | null>(null)
-  const [status, setStatus] = useState('')
   const [error, setError] = useState('')
 
   const found = matches(all, query)
@@ -71,9 +71,9 @@ export default function QrCodes({ event, from, to }: { event: string; from: stri
 
   async function downloadOne(ticket: string) {
     setError('')
-    setStatus('')
     try {
       save(await ticketPng(event, ticket), `${ticket}.png`)
+      toast(`Downloaded the QR code for ticket ${ticket}.`)
     } catch {
       setError(`Couldn’t make the image for ticket ${ticket}. Try again.`)
     }
@@ -81,7 +81,6 @@ export default function QrCodes({ event, from, to }: { event: string; from: stri
 
   async function downloadMany(tickets: string[], label: string) {
     setError('')
-    setStatus('')
     setBusy({ done: 0, total: tickets.length })
     try {
       const files = []
@@ -90,7 +89,7 @@ export default function QrCodes({ event, from, to }: { event: string; from: stri
         if (i % 10 === 9) setBusy({ done: i + 1, total: tickets.length })
       }
       save(new Blob([zip(files)], { type: 'application/zip' }), `${safe(event)}-QR-codes${label}.zip`)
-      setStatus(`Downloaded ${n(tickets.length)} QR code${tickets.length === 1 ? '' : 's'} in one zip file.`)
+      toast(`Downloaded ${n(tickets.length)} QR code${tickets.length === 1 ? '' : 's'} in one zip file.`)
     } catch {
       setError('Couldn’t make the zip file. Try again.')
     } finally {
@@ -143,8 +142,6 @@ export default function QrCodes({ event, from, to }: { event: string; from: stri
           </span>
         ) : error ? (
           <span className="font-semibold text-bad-text">{error}</span>
-        ) : status ? (
-          <span className="font-semibold text-ok-text">{status}</span>
         ) : (
           <span className="text-muted">Download one, or all of them as a zip file. Each image is named by its ticket number, like 0057.png.</span>
         )}

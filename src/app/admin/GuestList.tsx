@@ -8,6 +8,7 @@ import type { Ticket } from '@/lib/types'
 import Pager from './Pager'
 import { groupCounts, groupKey } from '@/lib/groups'
 import { confirmDialog } from '../confirm'
+import { toast } from '../toast'
 
 type Filter = TicketFilter
 const FILTERS: { id: Filter; label: string }[] = [
@@ -21,7 +22,6 @@ const fmt = (iso: string) => (iso ? new Date(iso).toLocaleTimeString([], { hour:
 export default function GuestList({ event, tickets, readOnly }: { event: string; tickets: Ticket[]; readOnly: boolean }) {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
-  const [status, setStatus] = useState('')
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
 
@@ -91,14 +91,9 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
       ) : (
         <ul className="flex flex-col gap-2">
           {shown.map((t) => (
-            <Guest key={t.ticket} event={event} t={t} group={groups.get(groupKey(t.name))} readOnly={readOnly} onStatus={setStatus} />
+            <Guest key={t.ticket} event={event} t={t} group={groups.get(groupKey(t.name))} readOnly={readOnly} />
           ))}
         </ul>
-      )}
-      {status && (
-        <p role="status" className="text-sm font-semibold text-ok-text">
-          {status}
-        </p>
       )}
       {matches.length > 0 && (
         <Pager
@@ -121,13 +116,11 @@ function Guest({
   t,
   group,
   readOnly,
-  onStatus,
 }: {
   event: string
   t: Ticket
   group?: { total: number; here: number }
   readOnly: boolean
-  onStatus: (s: string) => void
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -144,7 +137,7 @@ function Guest({
         if (r.error) return setError(r.error)
         if (r.result && r.result !== 'checked_in') return setError(r.message ?? 'Not checked in')
         setEditing(false)
-        onStatus(done)
+        toast(done)
         router.refresh()
       } catch {
         setError('Couldn’t save. Check the connection and try again.')

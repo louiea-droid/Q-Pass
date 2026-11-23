@@ -8,6 +8,7 @@ import { groupCounts, groupKey } from '@/lib/groups'
 import { isGiven, matchTicket, type TicketFilter } from '@/lib/display'
 import type { Ticket } from '@/lib/types'
 import { confirmDialog } from '../../confirm'
+import { toast } from '../../toast'
 
 type Fields = { name: string; info: string; notes: string }
 type Col = keyof Fields
@@ -38,7 +39,6 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
   const [giving, setGiving] = useState(false)
-  const [notice, setNotice] = useState('')
 
   // Filter on what's typed, so a name you just entered moves the ticket to "Given" right away.
   const rows = tickets.map((t) => ({ ...t, ...draft[t.ticket] }))
@@ -100,7 +100,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
       setDraft((x) => ({ ...x, [t.ticket]: blank }))
       setSaved((x) => ({ ...x, [t.ticket]: blank }))
       setRowState((x) => ({ ...x, [t.ticket]: 'saved' }))
-      setNotice(`Ticket ${t.ticket} is free again.`)
+      toast(`Ticket ${t.ticket} is free again.`)
     } catch (e) {
       setRowState((x) => ({ ...x, [t.ticket]: 'error' }))
       setErrors((x) => ({ ...x, [t.ticket]: (e as Error).message || 'Couldn’t remove' }))
@@ -127,11 +127,6 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
             <strong className="text-2xl font-extrabold text-ink tabular-nums">{given.toLocaleString('en')}</strong> of{' '}
             {rows.length.toLocaleString('en')} tickets given
           </p>
-          {notice && (
-            <p role="status" className="text-sm font-semibold text-ok-text">
-              {notice}
-            </p>
-          )}
         </div>
         {readOnly ? (
           <p className="rounded-lg bg-note px-3 py-1.5 text-sm text-note-ink">This event is closed, so tickets are read-only.</p>
@@ -139,13 +134,12 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
           <GiveButton
             onClick={() => {
               setGiving(true)
-              setNotice('')
             }}
           />
         )}
       </div>
 
-      {giving && <GiveTickets event={event} rows={rows} onGiven={given_} onClose={() => setGiving(false)} onDone={setNotice} />}
+      {giving && <GiveTickets event={event} rows={rows} onGiven={given_} onClose={() => setGiving(false)} onDone={toast} />}
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-0 flex-[1_1_260px]">
