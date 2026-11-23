@@ -114,3 +114,7 @@ export function decodeCsv(buf: ArrayBuffer): string {
     return new TextDecoder('windows-1252').decode(buf)
   }
 }
+
+/** Blank guest list to fill in: every ticket number, empty Name/Details/Notes. Imports back cleanly (blank cells change nothing). */
+export const guestTemplateCsv = (tickets: Pick<Ticket, 'ticket'>[]): string =>
+  ['Ticket,Name,Details,Notes', ...tickets.map((t) => `="${t.ticket}",,,`)].join('\r\n')

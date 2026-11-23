@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { decodeCsv, parseGuestCsv, planImport, ticketsCsv } from './csv'
+import { decodeCsv, guestTemplateCsv, parseGuestCsv, planImport, ticketsCsv } from './csv'
 
 const t = (o: Partial<Record<string, string>>) => ({
   ticket: '0001', name: '', info: '', notes: '', checkedInAt: '', checkedInBy: '', method: '' as const, ...o,
@@ -90,4 +90,12 @@ test('decodeCsv: UTF-8 files read as UTF-8, Excel’s default Windows-1252 CSV k
 test('import: common name headers like "Full Name" and "Guest name" are recognised', () => {
   expect(parseGuestCsv('Ticket No.,Full Name\n5,Ana').rows[0].name).toBe('Ana')
   expect(parseGuestCsv('Ticket,Guest name,Details\n5,Ben,VIP').rows[0]).toMatchObject({ name: 'Ben', info: 'VIP' })
+})
+
+test('guest template: header plus every ticket number with blank cells, and it imports back without changing anything', () => {
+  const csv = guestTemplateCsv([t({ ticket: '0001', name: 'Juan' }), t({ ticket: '0002' })])
+  expect(csv.split('\r\n')).toEqual(['Ticket,Name,Details,Notes', '="0001",,,', '="0002",,,'])
+  const { rows, badLines } = parseGuestCsv(csv)
+  expect(badLines).toEqual([])
+  expect(planImport(['0001', '0002'], rows).patches).toEqual([])
 })
