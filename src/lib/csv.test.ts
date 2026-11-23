@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { parseGuestCsv, planImport, ticketsCsv } from './csv'
+import { decodeCsv, parseGuestCsv, planImport, ticketsCsv } from './csv'
 
 const t = (o: Partial<Record<string, string>>) => ({
   ticket: '0001', name: '', info: '', notes: '', checkedInAt: '', checkedInBy: '', method: '' as const, ...o,
@@ -80,4 +80,9 @@ test('planImport: the same ticket twice, the last row wins', () => {
   expect(planImport(['0001'], [row('0001', 'Ana', 'A'), row('0001', 'Ben')]).patches).toEqual([
     { ticket: '0001', patch: { name: 'Ben' } },
   ])
+})
+
+test('decodeCsv: UTF-8 files read as UTF-8, Excel’s default Windows-1252 CSV keeps ñ', () => {
+  expect(decodeCsv(new TextEncoder().encode('Peña').buffer)).toBe('Peña')
+  expect(decodeCsv(new Uint8Array([0x50, 0x65, 0xf1, 0x61]).buffer)).toBe('Peña')
 })

@@ -1,5 +1,5 @@
-import { expect, test } from 'vitest'
-import { QUEUE_KEY, drain, enqueue, isNetworkError, readQueue } from './offline'
+import { expect, test, vi } from 'vitest'
+import { QUEUE_KEY, checkOffline, drain, enqueue, isNetworkError, readQueue, withTimeout } from './offline'
 
 const fakeStorage = () => {
   const m = new Map<string, string>()
@@ -61,4 +61,32 @@ test('isNetworkError: offline, or a failed request (Chrome and Safari wording); 
   expect(isNetworkError(new TypeError('Failed to fetch'), true)).toBe(true)
   expect(isNetworkError(new Error('Load failed'), true)).toBe(true)
   expect(isNetworkError(new Error('Event not found'), true)).toBe(false)
+})
+
+test('withTimeout: a request that hangs fails as a network error, so the scan is saved offline', async () => {
+  vi.useFakeTimers()
+  try {
+    const p = withTimeout(new Promise(() => {}), 8000)
+    const caught = p.catch((e) => e)
+    vi.advanceTimersByTime(8000)
+    expect(isNetworkError(await caught, true)).toBe(true)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('withTimeout: a quick answer passes through', async () => {
+  expect(await withTimeout(Promise.resolve(7), 8000)).toBe(7)
+})
+
+test('checkOffline: the phone stops codes it already knows are wrong, and a ticket scanned twice offline', () => {
+  const qr = (value: string) => ({ event: 'TAC Gala', method: 'QR' as const, value, at: '' })
+  const typed = (value: string) => ({ event: 'TAC Gala', method: 'manual' as const, value, at: '' })
+  const queued = [{ ...qr('TAC Gala-0057'), id: '1' }]
+  expect(checkOffline([], qr('TAC Gala-0058'))).toBe('ok')
+  expect(checkOffline([], qr('https://example.com/poster'))).toBe('not_ticket')
+  expect(checkOffline([], qr('Youth Camp-0058'))).toBe('wrong_event')
+  expect(checkOffline([], typed('abc'))).toBe('not_ticket')
+  expect(checkOffline(queued, qr('TAC Gala-0057'))).toBe('duplicate')
+  expect(checkOffline(queued, typed('57'))).toBe('duplicate')
 })

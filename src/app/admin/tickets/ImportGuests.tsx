@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { decodeCsv } from '@/lib/csv'
 import { importGuestsAction } from '../../actions'
 
 type Result = Awaited<ReturnType<typeof importGuestsAction>>
@@ -21,7 +22,7 @@ export default function ImportGuests({ event, closed }: { event: string; closed:
     setBusy(true)
     setResult(null)
     try {
-      const r = await importGuestsAction(event, await file.text())
+      const r = await importGuestsAction(event, decodeCsv(await file.arrayBuffer()))
       setResult(r)
       if (!r.error) router.refresh()
     } catch {

@@ -105,3 +105,12 @@ export function planImport(existing: string[], rows: GuestRow[]): { patches: { t
   }
   return { patches: [...byTicket].map(([ticket, patch]) => ({ ticket, patch })), unknown: [...unknown] }
 }
+
+/** File bytes to text: UTF-8 when valid, else Windows-1252 (what Excel on Windows saves as "CSV"), so ñ survives. */
+export function decodeCsv(buf: ArrayBuffer): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf)
+  } catch {
+    return new TextDecoder('windows-1252').decode(buf)
+  }
+}

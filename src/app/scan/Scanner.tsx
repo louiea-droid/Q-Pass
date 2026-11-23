@@ -6,7 +6,7 @@ import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } fro
 import { manualScanAction, scanAction, setNameAction } from '../actions'
 import SignOutButton from '../SignOutButton'
 import { headline } from '@/lib/display'
-import { type QueuedScan, drain, enqueue, isNetworkError, readQueue } from '@/lib/offline'
+import { type QueuedScan, checkOffline, drain, enqueue, isNetworkError, readQueue, withTimeout } from '@/lib/offline'
 import { normalizeTicket, parsePayload } from '@/lib/qr'
 import type { ScanOutcome, Staff } from '@/lib/types'
 import ThemeToggle from '../ThemeToggle'
@@ -40,11 +40,20 @@ const storage = () => {
   }
 }
 
+// A scan with no answer by then is treated as offline: on weak Wi-Fi requests hang instead of failing.
+const SCAN_TIMEOUT_MS = 8000
+
 const sendQueued = async (q: QueuedScan) => {
   // Any answer counts as sent: a ticket that was already used is logged red by the server and shows in the Check-in log.
-  if (q.method === 'QR') await scanAction(q.event, q.value)
-  else await manualScanAction(q.event, q.value)
+  if (q.method === 'QR') await withTimeout(scanAction(q.event, q.value), SCAN_TIMEOUT_MS)
+  else await withTimeout(manualScanAction(q.event, q.value), SCAN_TIMEOUT_MS)
 }
+
+const OFFLINE_REJECT = {
+  not_ticket: 'This isn’t a Q-Pass ticket for this event.',
+  wrong_event: 'This ticket is for another event.',
+  duplicate: 'This ticket was already scanned on this phone while offline.',
+} as const
 
 const SYNC_MS = 15_000
 
@@ -136,7 +145,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
     setSavedOffline(null)
     setTyping(false)
     try {
-      const o = await action()
+      const o = await withTimeout(action(), SCAN_TIMEOUT_MS)
       setOutcome(o)
       const ok = o.result === 'checked_in'
       navigator.vibrate?.(ok ? 80 : [60, 60, 60])
@@ -150,11 +159,19 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
       setOutcome(null)
       const s = storage()
       if (s && isNetworkError(e, navigator.onLine)) {
-        // No internet: keep the scan on this phone and let the person in; it is checked when the connection is back.
+        // No internet. What the phone can rule out on its own stops the line, like any red result.
+        const verdict = checkOffline(readQueue(s), queued)
+        if (verdict !== 'ok') {
+          setError(`${OFFLINE_REJECT[verdict]} (No internet right now.)`)
+          navigator.vibrate?.([60, 60, 60])
+          playTone(false)
+          lock.current.paused = true
+          setPaused(true)
+          return
+        }
+        // Otherwise keep the scan on this phone and let the person in; it is checked when the connection is back.
         setPending(enqueue(s, queued).length)
-        setSavedOffline(
-          (queued.method === 'QR' ? parsePayload(queued.value)?.ticket : normalizeTicket(queued.value)) ?? queued.value,
-        )
+        setSavedOffline((queued.method === 'QR' ? parsePayload(queued.value)?.ticket : normalizeTicket(queued.value)) ?? '')
         navigator.vibrate?.(80)
         playTone(true)
         return

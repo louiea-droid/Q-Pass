@@ -1,17 +1,23 @@
 'use client'
 
-// Client component so times are shown in the viewer's time zone (the server runs in UTC on Vercel).
+import { useSyncExternalStore } from 'react'
+
+// Times use the viewer's time zone. The server renders in UTC (Vercel), so times appear only after hydration;
+// rendering them on the server would not match the browser and React would throw a hydration error.
+const noSubscribe = () => () => {}
 const hm = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
 /** Check-ins per 15 minutes as thin bars. One series, so no legend; the busiest slot is named in text. */
 export default function ArrivalsChart({ buckets }: { buckets: { start: number; count: number }[] }) {
+  const inBrowser = useSyncExternalStore(noSubscribe, () => true, () => false)
+  const time = (ms: number) => (inBrowser ? hm(ms) : '')
   if (!buckets.length) return <p className="text-sm text-muted">No one has checked in yet.</p>
   const max = Math.max(...buckets.map((b) => b.count))
   const peak = buckets.find((b) => b.count === max)!
   return (
     <figure className="flex flex-col gap-2">
       <figcaption className="text-sm text-muted">
-        Busiest: <strong className="text-ink">{hm(peak.start)}</strong>, {max} {max === 1 ? 'arrival' : 'arrivals'} in 15 minutes
+        Busiest: <strong className="text-ink">{time(peak.start)}</strong>, {max} {max === 1 ? 'arrival' : 'arrivals'} in 15 minutes
       </figcaption>
       <div className="flex gap-2">
         {/* Y axis: just the top value, recessive. */}
@@ -29,7 +35,7 @@ export default function ArrivalsChart({ buckets }: { buckets: { start: number; c
                 />
                 {/* Hover: hit target is the whole column, not just the bar. */}
                 <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md bg-ink px-2 py-1 text-xs font-semibold whitespace-nowrap text-paper group-hover:block">
-                  {hm(b.start)}: {b.count}
+                  {time(b.start)}: {b.count}
                 </span>
               </div>
             ))}
@@ -38,7 +44,7 @@ export default function ArrivalsChart({ buckets }: { buckets: { start: number; c
             {buckets.map((b, i) =>
               i % 4 === 0 ? (
                 <span key={b.start} className="absolute whitespace-nowrap" style={{ left: `${(i / buckets.length) * 100}%` }}>
-                  {hm(b.start)}
+                  {time(b.start)}
                 </span>
               ) : null,
             )}
@@ -56,7 +62,7 @@ export default function ArrivalsChart({ buckets }: { buckets: { start: number; c
         <tbody>
           {buckets.map((b) => (
             <tr key={b.start}>
-              <td>{hm(b.start)}</td>
+              <td>{time(b.start)}</td>
               <td>{b.count}</td>
             </tr>
           ))}

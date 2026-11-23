@@ -1,3 +1,5 @@
+import { normalizeTicket, parsePayload } from './qr'
+
 /** A scan the phone couldn't send: kept in local storage and sent once the internet is back. */
 export type QueuedScan = { id: string; event: string; method: 'QR' | 'manual'; value: string; at: string }
 
@@ -44,4 +46,38 @@ export async function drain(s: ReadWrite, send: (q: QueuedScan) => Promise<void>
 /** Offline, or the request never reached the server (Chrome: "Failed to fetch", Safari: "Load failed"). */
 export function isNetworkError(e: unknown, online: boolean): boolean {
   return !online || /fetch|network|load failed|connection/i.test(String((e as Error)?.message ?? e))
+}
+
+/** Rejects with a network-style error if `p` takes longer than `ms`: on weak Wi-Fi a request can hang instead of failing. */
+export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Network timeout: no answer from the server')), ms)
+    p.then(
+      (v) => {
+        clearTimeout(timer)
+        resolve(v)
+      },
+      (e) => {
+        clearTimeout(timer)
+        reject(e)
+      },
+    )
+  })
+}
+
+const ticketOf = (s: Omit<QueuedScan, 'id'>) => {
+  if (s.method === 'QR') return parsePayload(s.value)
+  const ticket = normalizeTicket(s.value)
+  return ticket ? { event: s.event, ticket } : null
+}
+
+/**
+ * What the phone can tell on its own before saving a scan offline: not a ticket, another event's ticket,
+ * or a ticket already saved offline for this event. Only 'ok' should be saved and waved in.
+ */
+export function checkOffline(queue: QueuedScan[], scan: Omit<QueuedScan, 'id'>): 'ok' | 'not_ticket' | 'wrong_event' | 'duplicate' {
+  const t = ticketOf(scan)
+  if (!t) return 'not_ticket'
+  if (t.event !== scan.event) return 'wrong_event'
+  return queue.some((q) => q.event === scan.event && ticketOf(q)?.ticket === t.ticket) ? 'duplicate' : 'ok'
 }
