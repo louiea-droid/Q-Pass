@@ -29,3 +29,25 @@ export function arrivalCounts(tickets: { name: string; checkedInAt: string }[]) 
     checkedIn: tickets.filter((t) => t.checkedInAt).length,
   }
 }
+
+/** Check-ins counted per `minutes` slot, from the first slot with an arrival to the last (quiet slots included). */
+export function arrivalBuckets(times: string[], minutes = 15): { start: number; count: number }[] {
+  const step = minutes * 60_000
+  const counts = new Map<number, number>()
+  for (const t of times) {
+    const ms = Date.parse(t)
+    if (Number.isNaN(ms)) continue
+    const start = Math.floor(ms / step) * step
+    counts.set(start, (counts.get(start) ?? 0) + 1)
+  }
+  if (!counts.size) return []
+  const first = Math.min(...counts.keys())
+  const last = Math.max(...counts.keys())
+  const out = []
+  for (let s = first; s <= last; s += step) out.push({ start: s, count: counts.get(s) ?? 0 })
+  return out
+}
+
+/** Guests with a name on their ticket who never checked in, in ticket order. */
+export const noShows = <T extends { ticket: string; name: string; checkedInAt: string }>(tickets: T[]): T[] =>
+  tickets.filter((t) => isGiven(t) && !t.checkedInAt).sort((a, b) => a.ticket.localeCompare(b.ticket))

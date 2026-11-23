@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { headline, isGiven, matchTicket } from './display'
+import { arrivalBuckets, headline, isGiven, matchTicket, noShows } from './display'
 
 test('a named ticket is headed by the name', () => {
   expect(headline({ ticket: '0057', name: 'Juan Dela Cruz' })).toBe('Juan Dela Cruz')
@@ -47,4 +47,27 @@ test('arrival counts from the ticket list, so the desk shows real numbers before
     namedCheckedIn: 1,
     checkedIn: 2,
   })
+})
+
+const utc = (hm: string) => Date.parse(`2027-01-03T${hm}:00Z`)
+
+test('arrivalBuckets: 15-minute buckets from first to last arrival, empty ones in between', () => {
+  expect(arrivalBuckets(['2027-01-03T10:01:00Z', '2027-01-03T10:14:59Z', '2027-01-03T10:46:00Z'])).toEqual([
+    { start: utc('10:00'), count: 2 },
+    { start: utc('10:15'), count: 0 },
+    { start: utc('10:30'), count: 0 },
+    { start: utc('10:45'), count: 1 },
+  ])
+})
+
+test('arrivalBuckets: no valid times gives no buckets', () => {
+  expect(arrivalBuckets(['', 'x'])).toEqual([])
+})
+
+test('noShows: named tickets that never checked in, by ticket number', () => {
+  const t = (ticket: string, name: string, checkedInAt = '') => ({ ticket, name, checkedInAt })
+  expect(noShows([t('0003', 'C'), t('0001', 'A'), t('0002', ''), t('0004', 'D', '2027-01-03T10:00:00Z')]).map((x) => x.ticket)).toEqual([
+    '0001',
+    '0003',
+  ])
 })
