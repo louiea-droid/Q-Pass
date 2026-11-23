@@ -248,9 +248,8 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
         className="inset-auto m-0 w-64 rounded-xl border border-line-strong bg-surface p-1.5 text-ink shadow-[0_18px_40px_-16px_rgb(0_0_0/0.55)]"
       >
         {!open ? (
-          <button type="button" role="menuitem" disabled={pending} onClick={() => save({ status: 'open' }, 'status')} className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2.5 text-left hover:bg-soft">
+          <button type="button" role="menuitem" disabled={pending} onClick={() => save({ status: 'open' }, 'status')} className="flex w-full items-center rounded-lg px-3 py-2.5 text-left hover:bg-soft">
             <span className="text-[15px] font-semibold">{pending ? 'Reopening…' : 'Reopen event'}</span>
-            <span className="text-xs text-muted">Scanning and changes work again.</span>
           </button>
         ) : confirming ? (
           <div role="group" aria-label="Confirm closing" className="flex flex-col gap-2 rounded-lg bg-bad/10 p-3">
@@ -265,16 +264,14 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
             </div>
           </div>
         ) : (
-          <button type="button" role="menuitem" onClick={() => setConfirming(true)} className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2.5 text-left hover:bg-soft">
+          <button type="button" role="menuitem" onClick={() => setConfirming(true)} className="flex w-full items-center rounded-lg px-3 py-2.5 text-left hover:bg-soft">
             <span className="text-[15px] font-semibold text-bad-text">Close event…</span>
-            <span className="text-xs text-muted">When it’s over. Scanners turn its tickets away.</span>
           </button>
         )}
         {error?.where === 'status' && <p role="alert" className="px-3 py-2 text-sm font-semibold text-bad-text">{error.text}</p>}
         <div className="my-1 border-t border-line" />
-        <button type="button" role="menuitem" popoverTarget={deleteId} className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2.5 text-left hover:bg-soft">
+        <button type="button" role="menuitem" popoverTarget={deleteId} className="flex w-full items-center rounded-lg px-3 py-2.5 text-left hover:bg-soft">
           <span className="text-[15px] font-semibold text-bad-text">Delete event…</span>
-          <span className="text-xs text-muted">Removes it with all tickets and check-ins.</span>
         </button>
       </div>
 
