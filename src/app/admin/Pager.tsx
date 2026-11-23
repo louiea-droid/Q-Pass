@@ -1,6 +1,7 @@
 'use client'
 
 import { pageList } from '@/lib/pagination'
+import Select from '../Select'
 
 const SIZES = [10, 25, 50, 100]
 
@@ -66,25 +67,16 @@ export default function Pager({
         </button>
       </nav>
 
-      <label className="flex items-center gap-2 sm:justify-self-end">
-        Show
-        <span className="relative flex h-9 items-center rounded-lg border border-line-strong bg-surface">
-          <select
-            value={size}
-            onChange={(e) => onSize(Number(e.target.value))}
-            className="h-full appearance-none rounded-lg bg-transparent pr-8 pl-3 font-semibold text-ink tabular-nums"
-          >
-            {SIZES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <svg className="pointer-events-none absolute right-2.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </span>
-      </label>
+      <div className="flex items-center gap-2 sm:justify-self-end">
+        <span aria-hidden="true">Show</span>
+        <Select label="Rows per page" compact value={size} onChange={(e) => onSize(Number(e.target.value))}>
+          {SIZES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </Select>
+      </div>
     </div>
   )
 }

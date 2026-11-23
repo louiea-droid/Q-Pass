@@ -108,6 +108,42 @@ button:not(:disabled), [role="button"], summary, label:has(> input[type="radio"]
   cursor: pointer;
 }
 
+/* Dropdowns (Select.tsx). The ring is drawn on the wrapping label, so the select itself draws none. */
+.select:focus-visible { outline: none; }
+/* Native lists (Safari, Firefox, iOS): at least use the theme colours. */
+.select option { background-color: var(--surface); color: var(--ink); }
+
+/* Browsers with customizable <select> (Chrome/Edge 135+, Android) get a list styled like the app. */
+@supports (appearance: base-select) {
+  .select, .select::picker(select) { appearance: base-select; }
+  .select::picker-icon { display: none; } /* Select.tsx draws its own chevron */
+  .select::picker(select) {
+    margin-block: 6px;
+    min-width: anchor-size(width);
+    max-height: min(22rem, 60dvh);
+    padding: 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.45);
+  }
+  .select option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-weight: 600;
+    background: transparent;
+    cursor: pointer;
+  }
+  .select option:hover, .select option:focus-visible { background: var(--soft); outline: none; }
+  .select option:checked { background: var(--accent); color: var(--accent-ink); }
+  .select option:disabled { color: var(--muted); background: transparent; cursor: default; }
+  .select option::checkmark { order: 1; margin-left: auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }

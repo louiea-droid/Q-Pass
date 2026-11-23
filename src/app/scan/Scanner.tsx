@@ -4,6 +4,7 @@ import type { Html5Qrcode } from 'html5-qrcode'
 import Link from 'next/link'
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { manualScanAction, scanAction, setNameAction } from '../actions'
+import Select from '../Select'
 import SignOutButton from '../SignOutButton'
 import { headline } from '@/lib/display'
 import { type QueuedScan, checkOffline, drain, enqueue, isNetworkError, readQueue, withTimeout } from '@/lib/offline'
@@ -267,25 +268,22 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
   return (
     <div onPointerDown={unlockAudio} className="mx-auto flex min-h-dvh w-full max-w-md flex-col lg:my-8 lg:min-h-[min(46rem,calc(100dvh-9rem))] lg:rounded-3xl lg:border lg:border-line lg:shadow-[0_24px_60px_-24px_rgb(0_0_0/0.35)]">
       <header className="flex items-center gap-2.5 border-b border-line bg-surface px-4 pt-4 pb-3 lg:rounded-t-3xl">
-        <label className="relative flex h-11 min-w-0 flex-1 items-center rounded-xl border border-line-strong bg-surface">
-          <span className="sr-only">Event</span>
-          <span className="pointer-events-none absolute left-3.5 size-2 rounded-full bg-gold" aria-hidden="true" />
-          <select
-            value={event}
-            onChange={(e) => chooseEvent(e.target.value)}
-            className="h-full w-full min-w-0 appearance-none truncate rounded-xl bg-transparent pr-9 pl-8 text-[15px] font-semibold text-ink"
-          >
-            <option value="" disabled>
-              {events.length ? 'Choose the event' : 'No open events'}
+        <Select
+          label="Event"
+          value={event}
+          onChange={(e) => chooseEvent(e.target.value)}
+          className="flex-1"
+          icon={<span className="size-2 rounded-full bg-gold" />}
+        >
+          <option value="" disabled>
+            {events.length ? 'Choose the event' : 'No open events'}
+          </option>
+          {events.map((n) => (
+            <option key={n} value={n}>
+              {n}
             </option>
-            {events.map((n) => (
-              <option key={n}>{n}</option>
-            ))}
-          </select>
-          <svg className="pointer-events-none absolute right-3 text-muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </label>
+          ))}
+        </Select>
         {share}
         {/* On computers an admin has these in the admin header above. */}
         <span className={`contents ${staff.role === 'admin' ? 'lg:hidden' : ''}`}>
