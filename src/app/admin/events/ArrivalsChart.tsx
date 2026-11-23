@@ -53,23 +53,26 @@ export default function ArrivalsChart({ buckets }: { buckets: { start: number; c
           </div>
         </div>
       </div>
-      <table className="sr-only">
-        <caption>Arrivals per 15 minutes</caption>
-        <thead>
-          <tr>
-            <th>From</th>
-            <th>Arrivals</th>
-          </tr>
-        </thead>
-        <tbody>
-          {buckets.map((b) => (
-            <tr key={b.start}>
-              <td>{time(b.start)}</td>
-              <td>{b.count}</td>
+      {/* sr-only on a div, not the table: a table ignores height:1px and would stretch the page by a row per slot. */}
+      <div className="sr-only">
+        <table>
+          <caption>Arrivals per 15 minutes</caption>
+          <thead>
+            <tr>
+              <th>From</th>
+              <th>Arrivals</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {buckets.map((b) => (
+              <tr key={b.start}>
+                <td>{time(b.start)}</td>
+                <td>{b.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   )
 }
