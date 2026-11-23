@@ -89,7 +89,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
               <h2 id="live" className="text-lg font-extrabold">
                 Action log
               </h2>
-              {stats && stats.recent.length > 0 && <span className="text-[13px] text-muted">Latest {Math.min(stats.recent.length, 12)} scans</span>}
+              {stats && stats.recent.length > 0 && <span className="text-[13px] text-muted">Latest {Math.min(stats.recent.length, 12)} actions</span>}
             </div>
             {/* Fixed height, scrolls inside: new scans never push the cards below it down. */}
             <div className="h-80 overflow-y-auto" tabIndex={0} role="region" aria-label="Latest actions">
