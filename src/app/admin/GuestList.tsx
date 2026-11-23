@@ -7,6 +7,7 @@ import { headline, matchTicket, type TicketFilter } from '@/lib/display'
 import type { Ticket } from '@/lib/types'
 import Pager from './Pager'
 import { groupCounts, groupKey } from '@/lib/groups'
+import { confirmDialog } from '../confirm'
 
 type Filter = TicketFilter
 const FILTERS: { id: Filter; label: string }[] = [
@@ -231,8 +232,14 @@ function Guest({
           {t.name && !t.checkedInAt && (
             <button
               disabled={pending}
-              onClick={() => {
-                if (confirm(`Remove ${t.name} from ticket ${t.ticket}? The ticket becomes “Not given” and their details are cleared.`))
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    title: `Remove ${t.name}?`,
+                    message: `Ticket ${t.ticket} becomes “Not given” and their details are cleared.`,
+                    action: 'Remove',
+                  })
+                )
                   act(() => updateTicketAction(event, t.ticket, { name: '', info: '', notes: '' }), `Ticket ${t.ticket} is free again.`)
               }}
               aria-label={`Remove ${t.name} from ticket ${t.ticket}`}
@@ -244,8 +251,14 @@ function Guest({
           {t.checkedInAt ? (
             <button
               disabled={pending}
-              onClick={() => {
-                if (confirm(`Undo the check-in for ${label}? They’ll need to be checked in again.`))
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    title: 'Undo check-in?',
+                    message: `${label} will need to be checked in again.`,
+                    action: 'Undo check-in',
+                  })
+                )
                   act(() => undoCheckInAction(event, t.ticket), `Undid the check-in for ${label}.`)
               }}
               aria-label={`Undo check-in for ${label}`}

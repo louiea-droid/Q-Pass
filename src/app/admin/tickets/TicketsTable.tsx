@@ -7,6 +7,7 @@ import GiveTickets, { GiveButton } from './GiveTickets'
 import { groupCounts, groupKey } from '@/lib/groups'
 import { isGiven, matchTicket, type TicketFilter } from '@/lib/display'
 import type { Ticket } from '@/lib/types'
+import { confirmDialog } from '../../confirm'
 
 type Fields = { name: string; info: string; notes: string }
 type Col = keyof Fields
@@ -85,7 +86,12 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
 
   // "Ungive": clear the person's name, details and notes so the ticket is free again.
   async function remove(t: { ticket: string; name: string }) {
-    if (!confirm(`Remove ${t.name} from ticket ${t.ticket}? The ticket becomes “Not given” and their details are cleared.`)) return
+    const ok = await confirmDialog({
+      title: `Remove ${t.name}?`,
+      message: `Ticket ${t.ticket} becomes “Not given” and their details are cleared.`,
+      action: 'Remove',
+    })
+    if (!ok) return
     const blank = { name: '', info: '', notes: '' }
     setRowState((x) => ({ ...x, [t.ticket]: 'saving' }))
     try {

@@ -59,7 +59,7 @@ export function EventMeta({ event: e, inline = false }: { event: EventInfo; inli
         </Meta>
       )}
       <Meta label="Tickets" icon={<><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M13 5v14" strokeDasharray="2 2" /></>}>
-        <strong className="font-semibold text-ink">{count.toLocaleString('en')} tickets</strong>, numbered {e.ticketFrom} to {e.ticketTo}
+        <strong className="font-semibold text-ink">{count.toLocaleString('en')} tickets</strong>, numbered <span className="whitespace-nowrap">{e.ticketFrom} to {e.ticketTo}</span>
       </Meta>
     </dl>
   )
