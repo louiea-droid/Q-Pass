@@ -1,11 +1,9 @@
 import Link from 'next/link'
-import { headers } from 'next/headers'
-import QRCode from 'qrcode'
 import { requireStaff } from '@/lib/guard'
 import { listEvents, listTickets } from '@/lib/store'
 import Desk from './Desk'
 import EventPicker from './EventPicker'
-import ShareScanner from './ShareScanner'
+import ScannerShare from './ScannerShare'
 
 export const metadata = { title: 'Check-in desk · Q-Pass' }
 
@@ -28,11 +26,6 @@ export default async function CheckInDesk({ searchParams }: PageProps<'/admin'>)
     )
   const event = events.find((e) => e.name === wanted) ?? events.find((e) => e.status === 'open') ?? events[0]
   const tickets = await listTickets(event.name)
-  // The scanner link uses the address this page was opened at, so it is right on a PC, a hotspot or online.
-  const h = await headers()
-  const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000'
-  const scanUrl = `${h.get('x-forwarded-proto') ?? 'http'}://${host}/scan`
-  const qrSvg = await QRCode.toString(scanUrl, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' })
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -44,12 +37,7 @@ export default async function CheckInDesk({ searchParams }: PageProps<'/admin'>)
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <EventPicker events={events.map((e) => e.name)} value={event.name} />
-          <ShareScanner
-            url={scanUrl}
-            qrSvg={qrSvg}
-            passcode={process.env.SCANNER_PASSCODE ?? ''}
-            localOnly={['localhost', '127.', '[::1]'].some((p) => host.startsWith(p))}
-          />
+          <ScannerShare />
           <a
             href={`/api/export?event=${encodeURIComponent(event.name)}`}
             className="flex h-10 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:bg-soft"

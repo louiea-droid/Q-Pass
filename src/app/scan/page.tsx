@@ -2,6 +2,7 @@ import { requireStaff } from '@/lib/guard'
 import { listEvents } from '@/lib/store'
 import Scanner from './Scanner'
 import AdminHeader from '../admin/AdminHeader'
+import ScannerShare from '../admin/ScannerShare'
 
 export const metadata = { title: 'Scan tickets · Q-Pass' }
 
@@ -16,7 +17,7 @@ export default async function ScanPage() {
           <AdminHeader staff={staff} />
         </div>
       )}
-      <Scanner events={events} staff={staff} />
+      <Scanner events={events} staff={staff} share={staff.role === 'admin' && <ScannerShare iconOnly />} />
     </>
   )
 }
