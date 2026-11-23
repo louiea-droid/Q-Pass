@@ -44,7 +44,7 @@ const storage = () => {
 const SCAN_TIMEOUT_MS = 8000
 
 const sendQueued = async (q: QueuedScan) => {
-  // Any answer counts as sent: a ticket that was already used is logged red by the server and shows in the Check-in log.
+  // Any answer counts as sent: a ticket that was already used is logged red by the server and shows in the Action log.
   if (q.method === 'QR') await withTimeout(scanAction(q.event, q.value, q.by), SCAN_TIMEOUT_MS)
   else await withTimeout(manualScanAction(q.event, q.value, q.by), SCAN_TIMEOUT_MS)
 }
