@@ -336,8 +336,9 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             </p>
           )}
 
-          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#141518] ${outcome || error || savedOffline !== null ? 'h-64 lg:h-56' : 'h-96 lg:h-80'} transition-[height] duration-300`}>
-            <div id="reader" className="size-full [&_video]:size-full [&_video]:object-cover" />
+          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#141518] [container-type:size] ${outcome || error || savedOffline !== null ? 'h-64 lg:h-56' : 'h-96 lg:h-80'} transition-[height] duration-300`}>
+            {/* The library's own shaded box is hidden; the frame below draws the same area in Q-Pass style. */}
+            <div id="reader" className="size-full [&_#qr-shaded-region]:hidden [&_video]:size-full [&_video]:object-cover" />
             {torch && (
               <button
                 type="button"
@@ -354,11 +355,20 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 </svg>
               </button>
             )}
-            <svg className={`pointer-events-none absolute inset-0 m-auto ${paused ? 'opacity-40' : ''}`} width="170" height="170" viewBox="0 0 200 200" fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" aria-hidden="true">
-              <path d="M8 48V20a12 12 0 0 1 12-12h28M152 8h28a12 12 0 0 1 12 12v28M192 152v28a12 12 0 0 1-12 12h-28M48 192H20a12 12 0 0 1-12-12v-28" />
-            </svg>
-            <p className="absolute inset-x-0 bottom-3.5 text-center text-sm text-[#c9cce0]">
-              {paused ? 'Paused. Tap “Next person” to scan again' : 'Hold the QR code inside the frame'}
+            {/* Same size as qrbox (70% of the shorter side), with the camera dimmed around it. */}
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-0 m-auto size-[70cqmin] rounded-[26px] shadow-[0_0_0_100vmax_rgb(0_0_0/0.45)] transition-opacity duration-300 ${paused ? 'opacity-40' : ''}`}
+            >
+              <svg className="absolute inset-0 size-full text-accent" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round">
+                <path vectorEffect="non-scaling-stroke" d="M1 22V11A10 10 0 0 1 11 1h11M78 1h11a10 10 0 0 1 10 10v11M99 78v11a10 10 0 0 1-10 10H78M22 99H11A10 10 0 0 1 1 89V78" />
+              </svg>
+              {!paused && <span className="absolute inset-x-[10%] top-1/2 h-0.5 animate-scan rounded-full bg-accent shadow-[0_0_12px_2px] shadow-accent/60" />}
+            </div>
+            <p className="absolute inset-x-0 bottom-3 flex justify-center">
+              <span className="rounded-full bg-black/55 px-3 py-1 text-sm font-medium text-white">
+                {paused ? 'Paused. Tap “Next person” to scan again' : 'Hold the QR code inside the frame'}
+              </span>
             </p>
           </div>
 

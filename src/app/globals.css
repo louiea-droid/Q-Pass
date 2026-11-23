@@ -46,6 +46,11 @@
 }
 
 @theme inline {
+  --animate-scan: scan 2.2s ease-in-out infinite alternate;
+  @keyframes scan {
+    from { top: 8%; }
+    to { top: 92%; }
+  }
   --color-paper: var(--paper);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
