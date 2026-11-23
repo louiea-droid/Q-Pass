@@ -9,6 +9,9 @@ import { headline } from '@/lib/display'
 import type { ScanOutcome, Staff } from '@/lib/types'
 import ThemeToggle from '../ThemeToggle'
 import { TabBar } from '../admin/AdminNav'
+import { playTone, unlockAudio, useWakeLock } from './door'
+
+type Torch = ReturnType<ReturnType<Html5Qrcode['getRunningTrackCameraCapabilities']>['torchFeature']>
 
 const EVENT_KEY = 'tac-scan-event'
 const COOLDOWN_MS = 2000
@@ -39,6 +42,17 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
   const [typing, setTyping] = useState(false)
   const [count, setCount] = useState<number | null>(null)
   const lock = useRef({ busy: false, paused: false, last: '', lastAt: 0 })
+  const [torch, setTorch] = useState<Torch | null>(null)
+  const [torchOn, setTorchOn] = useState(false)
+  useWakeLock(!!event)
+
+  async function toggleTorch() {
+    if (!torch) return
+    try {
+      await torch.apply(!torchOn)
+      setTorchOn(!torchOn)
+    } catch {}
+  }
 
   function chooseEvent(name: string) {
     setChosen(name)
@@ -77,6 +91,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
       setOutcome(o)
       const ok = o.result === 'checked_in'
       navigator.vibrate?.(ok ? 80 : [60, 60, 60])
+      playTone(ok)
       // A warning stops the line: the volunteer must tap "Next person" before the camera scans again.
       if (!ok) {
         lock.current.paused = true
@@ -86,6 +101,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
       setOutcome(null)
       setError('Couldn’t save that scan. Check the internet connection and scan again.')
       navigator.vibrate?.([60, 60, 60])
+      playTone(false)
     } finally {
       setBusy(false)
       setTimeout(() => (lock.current.busy = false), COOLDOWN_MS)
@@ -135,13 +151,23 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
       })
       .then(() => {
         // Event changed or page left while the camera was still starting.
-        if (stopped && qr?.isScanning) qr.stop().catch(() => {})
+        if (stopped) {
+          if (qr?.isScanning) qr.stop().catch(() => {})
+          return
+        }
+        // Flashlight: Android Chrome exposes it; iPhones don't, so the button stays hidden there.
+        try {
+          const t = qr?.getRunningTrackCameraCapabilities().torchFeature()
+          if (t?.isSupported()) setTorch(t)
+        } catch {}
       })
       .catch(() => {
         if (!stopped) setCameraError('Camera is blocked or unavailable. Allow camera access for this site, or type ticket numbers below.')
       })
     return () => {
       stopped = true
+      setTorch(null)
+      setTorchOn(false)
       if (qr?.isScanning) qr.stop().then(() => qr?.clear()).catch(() => {})
     }
     // Restart the camera only when the event changes; `run` reads live state through refs and setters.
@@ -149,7 +175,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
   }, [event])
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col lg:my-8 lg:min-h-[min(46rem,calc(100dvh-9rem))] lg:rounded-3xl lg:border lg:border-line lg:shadow-[0_24px_60px_-24px_rgb(0_0_0/0.35)]">
+    <div onPointerDown={unlockAudio} className="mx-auto flex min-h-dvh w-full max-w-md flex-col lg:my-8 lg:min-h-[min(46rem,calc(100dvh-9rem))] lg:rounded-3xl lg:border lg:border-line lg:shadow-[0_24px_60px_-24px_rgb(0_0_0/0.35)]">
       <header className="flex items-center gap-2.5 border-b border-line bg-surface px-4 pt-4 pb-3 lg:rounded-t-3xl">
         <label className="relative flex h-11 min-w-0 flex-1 items-center rounded-xl border border-line-strong bg-surface">
           <span className="sr-only">Event</span>
@@ -218,6 +244,22 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
 
           <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#141518] ${outcome || error ? 'h-64 lg:h-56' : 'h-96 lg:h-80'} transition-[height] duration-300`}>
             <div id="reader" className="size-full [&_video]:size-full [&_video]:object-cover" />
+            {torch && (
+              <button
+                type="button"
+                onClick={toggleTorch}
+                aria-pressed={torchOn}
+                aria-label="Flashlight"
+                className={`absolute top-3 right-3 z-10 grid size-11 place-items-center rounded-full transition-colors duration-200 ${
+                  torchOn ? 'bg-accent text-accent-ink' : 'bg-black/45 text-white hover:bg-black/60'
+                }`}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M18 6c0 2-2 2-2 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10c0-2-2-2-2-4V2h12z" />
+                  <path d="M6 6h12M12 12v2" />
+                </svg>
+              </button>
+            )}
             <svg className={`pointer-events-none absolute inset-0 m-auto ${paused ? 'opacity-40' : ''}`} width="170" height="170" viewBox="0 0 200 200" fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" aria-hidden="true">
               <path d="M8 48V20a12 12 0 0 1 12-12h28M152 8h28a12 12 0 0 1 12 12v28M192 152v28a12 12 0 0 1-12 12h-28M48 192H20a12 12 0 0 1-12-12v-28" />
             </svg>
