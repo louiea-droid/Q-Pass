@@ -7,9 +7,6 @@ export const eventHref = (name: string) => `/admin/events/${encodeURIComponent(n
 export const fmtDate = (d: string) =>
   d ? new Date(`${d}T00:00`).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : ''
 
-export const secondaryLink =
-  'flex h-10 items-center rounded-lg border border-line-strong px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:bg-soft'
-
 /** Calendar-style date block, so events can be told apart at a glance. */
 export function DateTile({ date }: { date: string }) {
   const d = new Date(`${date}T00:00`)

@@ -215,12 +215,18 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
     menu.style.left = `${Math.max(8, Math.min(r.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8))}px`
   }
 
+  // Header-row sizes: a touch smaller on phones so the whole row fits on one line.
   const iconBtn =
-    'flex size-10 items-center justify-center rounded-lg border border-line-strong text-ink transition-colors duration-200 hover:bg-soft'
+    'flex size-9 shrink-0 items-center justify-center rounded-lg border border-line-strong text-ink transition-colors duration-200 hover:bg-soft sm:size-10'
 
   return (
     <>
-      <button type="button" popoverTarget={dialogId} className={`${secondary} gap-2`}>
+      {/* From tablet width up; on phones "Edit details" is the first item in the ⋯ menu, so the row fits one line. */}
+      <button
+        type="button"
+        popoverTarget={dialogId}
+        className="hidden h-10 shrink-0 items-center gap-2 rounded-lg border border-line-strong px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:bg-soft sm:flex"
+      >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
         </svg>
@@ -247,6 +253,10 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
         }}
         className="inset-auto m-0 w-64 rounded-xl border border-line-strong bg-surface p-1.5 text-ink shadow-[0_18px_40px_-16px_rgb(0_0_0/0.55)]"
       >
+        <button type="button" role="menuitem" popoverTarget={dialogId} className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[15px] font-semibold hover:bg-soft sm:hidden">
+          Edit details
+        </button>
+        <div className="my-1 border-t border-line sm:hidden" />
         {!open ? (
           <button type="button" role="menuitem" disabled={pending} onClick={() => save({ status: 'open' }, 'status')} className="flex w-full items-center rounded-lg px-3 py-2.5 text-left hover:bg-soft">
             <span className="text-[15px] font-semibold">{pending ? 'Reopening…' : 'Reopen event'}</span>
