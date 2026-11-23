@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps<'/admin/events/[nam
   return { title: `${decode((await params).name)} · Q-Pass` }
 }
 
-/** One event: header with shortcuts, the report, and settings at the bottom (away from everyday clicks). */
+/** One event: header with shortcuts, Edit and a ⋯ menu (close / reopen), then the report. */
 export default async function EventPage({ params }: PageProps<'/admin/events/[name]'>) {
   await requireStaff('admin')
   const event = await getEvent(decode((await params).name))
@@ -60,12 +60,11 @@ export default async function EventPage({ params }: PageProps<'/admin/events/[na
           <Link href={`/admin/qr?event=${q}`} className={secondaryLink}>
             QR codes
           </Link>
+          <EditEvent event={event} />
         </div>
       </header>
 
       <EventReport event={event} tickets={tickets} />
-
-      <EditEvent event={event} />
     </section>
   )
 }
