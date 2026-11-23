@@ -6,6 +6,8 @@ import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } fro
 import { manualScanAction, scanAction, setNameAction } from '../actions'
 import { signOutAction } from '../signin/actions'
 import { headline } from '@/lib/display'
+import { type QueuedScan, drain, enqueue, isNetworkError, readQueue } from '@/lib/offline'
+import { normalizeTicket, parsePayload } from '@/lib/qr'
 import type { ScanOutcome, Staff } from '@/lib/types'
 import ThemeToggle from '../ThemeToggle'
 import { TabBar } from '../admin/AdminNav'
@@ -29,6 +31,23 @@ const readSaved = () => {
 }
 const noSubscribe = () => () => {}
 
+// Local storage can be blocked (private mode); offline saving is then off and the old error shows instead.
+const storage = () => {
+  try {
+    return localStorage
+  } catch {
+    return null
+  }
+}
+
+const sendQueued = async (q: QueuedScan) => {
+  // Any answer counts as sent: a ticket that was already used is logged red by the server and shows in the Check-in log.
+  if (q.method === 'QR') await scanAction(q.event, q.value)
+  else await manualScanAction(q.event, q.value)
+}
+
+const SYNC_MS = 15_000
+
 export default function Scanner({ events, staff, share }: { events: string[]; staff: Staff; share?: ReactNode }) {
   const [chosen, setChosen] = useState<string | null>(null)
   // The event chosen last time on this phone (empty on the server).
@@ -44,7 +63,35 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
   const lock = useRef({ busy: false, paused: false, last: '', lastAt: 0 })
   const [torch, setTorch] = useState<Torch | null>(null)
   const [torchOn, setTorchOn] = useState(false)
+  const [savedOffline, setSavedOffline] = useState<string | null>(null) // ticket label of the last scan saved offline
+  const [pending, setPending] = useState(0)
   useWakeLock(!!event)
+
+  // Send scans saved offline: on load, when the phone comes back online, and every 15 s while any are waiting.
+  // ponytail: offline scans get the sync time, not the scan time (check_in uses now()), so the arrivals chart
+  // shifts by the outage length. Upgrade path: a p_at parameter on check_in.
+  const draining = useRef(false)
+  useEffect(() => {
+    const sync = async () => {
+      const s = storage()
+      if (!s || draining.current) return
+      draining.current = true
+      try {
+        setPending((await drain(s, sendQueued)).left)
+      } finally {
+        draining.current = false
+      }
+    }
+    sync()
+    const id = setInterval(() => {
+      if (readQueue(storage() ?? { getItem: () => null }).length) sync()
+    }, SYNC_MS)
+    window.addEventListener('online', sync)
+    return () => {
+      clearInterval(id)
+      window.removeEventListener('online', sync)
+    }
+  }, [])
 
   async function toggleTorch() {
     if (!torch) return
@@ -70,6 +117,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
     lock.current.last = '' // the same ticket may be scanned again on purpose
     setPaused(false)
     setOutcome(null)
+    setSavedOffline(null)
     setError('')
   }
 
@@ -81,10 +129,11 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
     } catch {}
   }
 
-  async function run(action: () => Promise<ScanOutcome>) {
+  async function run(action: () => Promise<ScanOutcome>, queued: Omit<QueuedScan, 'id'>) {
     lock.current.busy = true
     setBusy(true)
     setError('')
+    setSavedOffline(null)
     setTyping(false)
     try {
       const o = await action()
@@ -97,8 +146,19 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
         lock.current.paused = true
         setPaused(true)
       } else refreshCount()
-    } catch {
+    } catch (e) {
       setOutcome(null)
+      const s = storage()
+      if (s && isNetworkError(e, navigator.onLine)) {
+        // No internet: keep the scan on this phone and let the person in; it is checked when the connection is back.
+        setPending(enqueue(s, queued).length)
+        setSavedOffline(
+          (queued.method === 'QR' ? parsePayload(queued.value)?.ticket : normalizeTicket(queued.value)) ?? queued.value,
+        )
+        navigator.vibrate?.(80)
+        playTone(true)
+        return
+      }
       setError('Couldn’t save that scan. Check the internet connection and scan again.')
       navigator.vibrate?.([60, 60, 60])
       playTone(false)
@@ -144,7 +204,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             if (l.busy || l.paused || (text === l.last && Date.now() - l.lastAt < SAME_CODE_MS)) return
             l.last = text
             l.lastAt = Date.now()
-            run(() => scanAction(event, text))
+            run(() => scanAction(event, text), { event, method: 'QR', value: text, at: new Date().toISOString() })
           },
           undefined,
         )
@@ -241,8 +301,16 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
               <strong className="text-lg text-ink tabular-nums">{count ?? '…'}</strong> checked in
             </span>
           </div>
+          {pending > 0 && (
+            <p role="status" className="mx-4 mb-2.5 flex items-center gap-2 rounded-xl bg-note px-3 py-2 text-sm font-semibold text-note-ink">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 20 0M5 12.9a10 10 0 0 1 14 0M3 3l18 18" />
+              </svg>
+              {pending === 1 ? '1 scan' : `${pending} scans`} waiting to send. Keep scanning.
+            </p>
+          )}
 
-          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#141518] ${outcome || error ? 'h-64 lg:h-56' : 'h-96 lg:h-80'} transition-[height] duration-300`}>
+          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#141518] ${outcome || error || savedOffline !== null ? 'h-64 lg:h-56' : 'h-96 lg:h-80'} transition-[height] duration-300`}>
             <div id="reader" className="size-full [&_video]:size-full [&_video]:object-cover" />
             {torch && (
               <button
@@ -282,6 +350,24 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
               </p>
             )}
             {!busy && outcome && <Result outcome={outcome} event={event} />}
+            {!busy && savedOffline !== null && (
+              // Amber, not green: nobody has checked this ticket yet. Same size as the green and red cards.
+              <section className="flex min-h-73 flex-col gap-2 rounded-3xl bg-note p-5.5 text-note-ink">
+                <span className="flex items-center gap-2.5 text-lg font-bold">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 20 0M5 12.9a10 10 0 0 1 14 0M3 3l18 18" />
+                  </svg>
+                  Saved offline
+                </span>
+                <span className="text-2xl leading-tight font-extrabold wrap-anywhere">
+                  {/^\d{4}$/.test(savedOffline) ? `Ticket ${savedOffline}` : 'This ticket'}
+                </span>
+                <span className="text-base leading-relaxed">
+                  It will be checked when the internet is back. Let them in.
+                </span>
+                <span className="mt-auto border-t border-current/25 pt-3 text-[15px] leading-relaxed">Ready for the next person.</span>
+              </section>
+            )}
           </div>
 
           <div className="flex-1" />
@@ -293,7 +379,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 onCancel={() => setTyping(false)}
                 onSubmit={(t) => {
                   resume()
-                  run(() => manualScanAction(event, t))
+                  run(() => manualScanAction(event, t), { event, method: 'manual', value: t, at: new Date().toISOString() })
                 }}
               />
             ) : paused ? (
