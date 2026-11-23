@@ -3,8 +3,6 @@ import Logo from '../Logo'
 import SignInForm from './SignInForm'
 import ThemeToggle from '../ThemeToggle'
 
-export const metadata = { title: 'Sign in · Q-Pass' }
-
 export default async function SignIn() {
   // Checks the database connection (and, in Sheet mode, creates the Events and Log tabs).
   const setupError = await ensureSchema().then(

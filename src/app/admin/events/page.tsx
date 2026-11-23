@@ -4,8 +4,6 @@ import { listEvents } from '@/lib/store'
 import { NewEvent } from './EventForm'
 import { DateTile, EventMeta, StatusPill, eventHref } from './parts'
 
-export const metadata = { title: 'Events · Q-Pass' }
-
 const STEPS = ['Create the event', 'Download the QR codes', 'Scan them at the door']
 
 export default async function EventsPage() {

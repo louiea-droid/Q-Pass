@@ -17,10 +17,6 @@ const decode = (s: string) => {
   }
 }
 
-export async function generateMetadata({ params }: PageProps<'/admin/events/[name]'>) {
-  return { title: `${decode((await params).name)} · Q-Pass` }
-}
-
 /** One event: header with shortcuts, Edit and a ⋯ menu (close / reopen), then the report. */
 export default async function EventPage({ params }: PageProps<'/admin/events/[name]'>) {
   await requireStaff('admin')

@@ -4,8 +4,6 @@ import Scanner from './Scanner'
 import AdminHeader from '../admin/AdminHeader'
 import ScannerShare from '../admin/ScannerShare'
 
-export const metadata = { title: 'Scan tickets · Q-Pass' }
-
 export default async function ScanPage() {
   const staff = await requireStaff('scanner')
   const events = (await listEvents()).filter((e) => e.status === 'open').map((e) => e.name)

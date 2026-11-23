@@ -5,8 +5,6 @@ import { listEvents } from '@/lib/store'
 import EventPicker from '../EventPicker'
 import QrCodes from './QrCodes'
 
-export const metadata = { title: 'QR codes · Q-Pass' }
-
 export default async function QrPage({ searchParams }: PageProps<'/admin/qr'>) {
   await requireStaff('admin')
   const { event: wanted } = await searchParams

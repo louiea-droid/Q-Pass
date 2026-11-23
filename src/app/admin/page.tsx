@@ -6,8 +6,6 @@ import Desk from './Desk'
 import EventPicker from './EventPicker'
 import ScannerShare from './ScannerShare'
 
-export const metadata = { title: 'Check-in desk · Q-Pass' }
-
 export default async function CheckInDesk({ searchParams }: PageProps<'/admin'>) {
   await requireStaff('admin')
   const { event: wanted } = await searchParams

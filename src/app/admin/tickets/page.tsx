@@ -6,8 +6,6 @@ import EventPicker from '../EventPicker'
 import ImportGuests from './ImportGuests'
 import TicketsTable from './TicketsTable'
 
-export const metadata = { title: 'Tickets · Q-Pass' }
-
 export default async function TicketsPage({ searchParams }: PageProps<'/admin/tickets'>) {
   await requireStaff('admin')
   const { event: wanted } = await searchParams
