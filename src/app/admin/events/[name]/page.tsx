@@ -65,13 +65,7 @@ export default async function EventPage({ params }: PageProps<'/admin/events/[na
 
       <EventReport event={event} tickets={tickets} />
 
-      <section aria-labelledby="settings-title" className="flex flex-col gap-1 rounded-2xl border border-line bg-surface p-4 sm:p-5">
-        <h2 id="settings-title" className="text-base font-extrabold">
-          Event settings
-        </h2>
-        <p className="text-sm text-muted">Change the date, venue or details, or close the event when it’s over.</p>
-        <EditEvent event={event} />
-      </section>
+      <EditEvent event={event} />
     </section>
   )
 }

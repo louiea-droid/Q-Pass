@@ -8,7 +8,7 @@ import { isValidEventName, normalizeTicket } from '@/lib/qr'
 import type { EventInfo } from '@/lib/types'
 
 const input =
-  'h-10 w-full rounded-lg border border-line-strong bg-surface px-3 text-[15px] font-medium text-ink focus:border-primary focus:outline-none'
+  'h-10 w-full rounded-lg border border-line-strong bg-paper px-3 text-[15px] font-medium text-ink focus:border-primary focus:outline-none'
 const label = 'flex flex-col gap-1 text-sm font-bold'
 const secondary = 'flex h-10 items-center rounded-lg border border-line-strong px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:bg-soft disabled:opacity-60'
 const primary = 'flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-[15px] font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover disabled:opacity-60'
@@ -169,71 +169,109 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
   )
 }
 
+/** Event settings: details on the left, open/closed status on the right (same columns as the report above). */
 export function EditEvent({ event }: { event: EventInfo }) {
   const router = useRouter()
-  const [error, setError] = useState('')
+  const [error, setError] = useState<{ where: 'details' | 'status'; text: string } | null>(null)
   const [saved, setSaved] = useState('')
+  const [dirty, setDirty] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [pending, start] = useTransition()
   const open = event.status === 'open'
 
-  const save = (patch: Partial<Omit<EventInfo, 'name'>>, msg: string) =>
+  const save = (patch: Partial<Omit<EventInfo, 'name'>>, where: 'details' | 'status') =>
     start(async () => {
-      setError('')
+      setError(null)
       setSaved('')
       const r = await updateEventAction(event.name, patch).catch(() => ({ error: 'Couldn’t save. Try again.' }))
-      if (r.error) return setError(r.error)
-      setSaved(msg)
+      if (r.error) return setError({ where, text: r.error })
+      setSaved(where === 'details' ? 'Changes saved.' : '')
+      setDirty(false)
+      setConfirming(false)
       router.refresh()
     })
 
+  const card = 'flex min-w-0 flex-col gap-4 rounded-2xl border border-line bg-surface p-4 sm:p-5'
+
   return (
-    <details className="group border-t border-line pt-3">
-      <summary className="flex h-9 w-fit list-none items-center gap-2 rounded-lg text-sm font-semibold text-muted hover:text-ink [&::-webkit-details-marker]:hidden">
-        <svg className="transition-transform duration-200 group-open:rotate-90" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="m9 6 6 6-6 6" />
-        </svg>
-        Edit or close event
-      </summary>
+    <section aria-label="Event settings" className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <form
-        className="mt-3 grid gap-4 sm:grid-cols-2"
+        className={card}
+        onChange={() => {
+          setDirty(true)
+          setSaved('')
+        }}
         onSubmit={(ev) => {
           ev.preventDefault()
           const f = new FormData(ev.currentTarget)
-          save({ date: String(f.get('date')), venue: String(f.get('venue')), details: String(f.get('details')) }, 'Saved.')
+          save({ date: String(f.get('date')), venue: String(f.get('venue')), details: String(f.get('details')) }, 'details')
         }}
       >
-        <label className={label}>
-          Date
-          <input name="date" type="date" defaultValue={event.date} className={input} />
-        </label>
-        <label className={label}>
-          Venue
-          <input name="venue" defaultValue={event.venue} className={input} />
-        </label>
-        <label className={`${label} sm:col-span-2`}>
-          Details
-          <textarea name="details" rows={2} defaultValue={event.details} className={`${input} h-auto py-2`} />
-        </label>
-        <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-          <button disabled={pending} className={primary}>
-            {pending ? 'Saving…' : 'Save details'}
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => {
-              if (!open || confirm(`Close ${event.name}? Scanners will turn its tickets away until you reopen it.`))
-                save({ status: open ? 'closed' : 'open' }, open ? 'Event closed.' : 'Event reopened.')
-            }}
-            className={`${secondary} ${open ? 'border-bad/40 text-bad-text hover:bg-bad/5' : ''}`}
-          >
-            {open ? 'Close event' : 'Reopen event'}
-          </button>
-          <span role="status" className="text-sm font-semibold">
-            {error ? <span className="text-bad-text">{error}</span> : saved}
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-base font-extrabold">Event details</h2>
+          <p className="text-sm text-muted">Shown on the event card and the tickets page. The name and ticket numbers can’t change.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className={label}>
+            Date
+            <input name="date" type="date" defaultValue={event.date} className={input} />
+          </label>
+          <label className={label}>
+            Venue
+            <input name="venue" defaultValue={event.venue} placeholder="Where it’s held" className={input} />
+          </label>
+          <label className={`${label} sm:col-span-2`}>
+            Details
+            <textarea name="details" rows={3} defaultValue={event.details} placeholder="Anything volunteers should know" className={`${input} h-auto resize-y py-2`} />
+          </label>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-line pt-4">
+          <span role="status" className="mr-auto text-sm font-semibold">
+            {error?.where === 'details' ? <span className="text-bad-text">{error.text}</span> : <span className="text-ok-text">{saved}</span>}
           </span>
+          <button disabled={pending || !dirty} className={primary}>
+            {pending && dirty ? 'Saving…' : 'Save changes'}
+          </button>
         </div>
       </form>
-    </details>
+
+      <div className={card}>
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-base font-extrabold">Status</h2>
+          <p className="flex items-center gap-2 text-[15px] font-semibold">
+            <span className={`size-2 rounded-full ${open ? 'bg-ok-text' : 'bg-muted'}`} aria-hidden="true" />
+            {open ? 'Open for scanning' : 'Closed'}
+          </p>
+        </div>
+        <p className="text-sm text-muted">
+          {open
+            ? 'Scanners accept this event’s tickets. Close it when the event is over: scanners will turn its tickets away and the lists become read-only.'
+            : 'Scanners turn this event’s tickets away and the lists are read-only. Reopen it to scan or make changes again.'}
+        </p>
+        {error?.where === 'status' && <p role="alert" className="text-sm font-semibold text-bad-text">{error.text}</p>}
+        {!open ? (
+          <button type="button" disabled={pending} onClick={() => save({ status: 'open' }, 'status')} className={`${primary} w-full`}>
+            {pending ? 'Reopening…' : 'Reopen event'}
+          </button>
+        ) : confirming ? (
+          // Two steps in place of a browser pop-up, so closing mid-event takes a deliberate second tap.
+          <div role="group" aria-label="Confirm closing" className="flex flex-col gap-2 rounded-xl bg-bad/10 p-3">
+            <p className="text-sm font-semibold text-bad-text">Close {event.name}? Scanning stops on every phone.</p>
+            <div className="flex gap-2">
+              <button type="button" disabled={pending} onClick={() => save({ status: 'closed' }, 'status')} className="flex h-10 flex-1 items-center justify-center rounded-lg bg-bad px-3 text-[15px] font-bold text-on-flag disabled:opacity-60">
+                {pending ? 'Closing…' : 'Yes, close it'}
+              </button>
+              <button type="button" disabled={pending} autoFocus onClick={() => setConfirming(false)} className={`${secondary} flex-1 justify-center`}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setConfirming(true)} className={`${secondary} w-full justify-center border-bad/40 text-bad-text hover:bg-bad/5`}>
+            Close event
+          </button>
+        )}
+      </div>
+    </section>
   )
 }
