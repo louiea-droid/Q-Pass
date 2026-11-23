@@ -116,6 +116,7 @@ button:not(:disabled), [role="button"], summary, label:has(> input[type="radio"]
 /* Browsers with customizable <select> (Chrome/Edge 135+, Android) get a list styled like the app. */
 @supports (appearance: base-select) {
   .select, .select::picker(select) { appearance: base-select; }
+  .select { display: flex; align-items: center; } /* base-select lays the button out as a box; keep the text centred */
   .select::picker-icon { display: none; } /* Select.tsx draws its own chevron */
   .select::picker(select) {
     margin-block: 6px;
