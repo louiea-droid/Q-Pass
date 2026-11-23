@@ -15,10 +15,16 @@ export default function ImportGuests({ event, closed }: { event: string; closed:
   const [file, setFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<Result | null>(null)
+  const [opened, setOpened] = useState(0) // new key each time, so the file picker is empty and the same file can be picked again
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!file) return
+    // Uploads over 1 MB are refused before they reach the server (Next's limit), which would look like a network error.
+    if (file.size > 1_000_000) {
+      setResult({ error: 'This file is over 1 MB. Split the list into smaller files and import them one by one.' })
+      return
+    }
     setBusy(true)
     setResult(null)
     try {
@@ -55,6 +61,7 @@ export default function ImportGuests({ event, closed }: { event: string; closed:
           if (e.newState === 'open') {
             setFile(null)
             setResult(null)
+            setOpened((n) => n + 1)
           }
         }}
         className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-5 text-ink shadow-2xl backdrop:bg-black/50"
@@ -84,6 +91,7 @@ export default function ImportGuests({ event, closed }: { event: string; closed:
             Guest list file
           </label>
           <input
+            key={opened}
             id="import-file"
             type="file"
             accept=".csv,text/csv"

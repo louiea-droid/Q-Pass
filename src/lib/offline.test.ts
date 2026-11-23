@@ -90,3 +90,8 @@ test('checkOffline: the phone stops codes it already knows are wrong, and a tick
   expect(checkOffline(queued, qr('TAC Gala-0057'))).toBe('duplicate')
   expect(checkOffline(queued, typed('57'))).toBe('duplicate')
 })
+
+test('enqueue: when the phone storage is full it reports failure instead of losing the scan silently', () => {
+  const full = { getItem: () => null, setItem: () => { throw new Error('QuotaExceededError') } }
+  expect(enqueue(full, scan('a'))).toBeNull()
+})

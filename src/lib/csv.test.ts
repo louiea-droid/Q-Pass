@@ -86,3 +86,8 @@ test('decodeCsv: UTF-8 files read as UTF-8, Excel’s default Windows-1252 CSV k
   expect(decodeCsv(new TextEncoder().encode('Peña').buffer)).toBe('Peña')
   expect(decodeCsv(new Uint8Array([0x50, 0x65, 0xf1, 0x61]).buffer)).toBe('Peña')
 })
+
+test('import: common name headers like "Full Name" and "Guest name" are recognised', () => {
+  expect(parseGuestCsv('Ticket No.,Full Name\n5,Ana').rows[0].name).toBe('Ana')
+  expect(parseGuestCsv('Ticket,Guest name,Details\n5,Ben,VIP').rows[0]).toMatchObject({ name: 'Ben', info: 'VIP' })
+})

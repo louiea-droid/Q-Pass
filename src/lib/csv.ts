@@ -74,7 +74,7 @@ export function parseGuestCsv(text: string): { rows: GuestRow[]; badLines: numbe
   const head = all[0]?.cells.map((c) => clean(c).toLowerCase())
   const hasHeader = !!head?.some((c) => c.startsWith('ticket'))
   const col = (re: RegExp, fallback: number) => (hasHeader ? head!.findIndex((c) => re.test(c)) : fallback)
-  const at = { ticket: col(/^ticket/, 0), name: col(/^name/, 1), info: col(/^(info|details)/, 2), notes: col(/^notes/, 3) }
+  const at = { ticket: col(/^ticket/, 0), name: col(/name/, 1), info: col(/^(info|details)/, 2), notes: col(/^notes/, 3) }
   const rows: GuestRow[] = []
   const badLines: number[] = []
   for (const r of hasHeader ? all.slice(1) : all) {

@@ -1,7 +1,7 @@
 import { normalizeTicket, parsePayload } from './qr'
 
-/** A scan the phone couldn't send: kept in local storage and sent once the internet is back. */
-export type QueuedScan = { id: string; event: string; method: 'QR' | 'manual'; value: string; at: string }
+/** A scan the phone couldn't send: kept in local storage and sent once the internet is back. `by` is who scanned it. */
+export type QueuedScan = { id: string; event: string; method: 'QR' | 'manual'; value: string; at: string; by?: string }
 
 export const QUEUE_KEY = 'qpass-offline-queue'
 
@@ -19,13 +19,22 @@ export function readQueue(s: Read): QueuedScan[] {
 
 const save = (s: ReadWrite, q: QueuedScan[]) => s.setItem(QUEUE_KEY, JSON.stringify(q))
 
-export function enqueue(s: ReadWrite, scan: Omit<QueuedScan, 'id'>): QueuedScan[] {
+/** Adds a scan; null when the phone can't store it (storage full or blocked), so the caller can say so. */
+export function enqueue(s: ReadWrite, scan: Omit<QueuedScan, 'id'>): QueuedScan[] | null {
   const q = [...readQueue(s), { ...scan, id: crypto.randomUUID() }]
-  save(s, q)
-  return q
+  try {
+    save(s, q)
+    return q
+  } catch {
+    return null
+  }
 }
 
-/** Sends the oldest scan first. Each is removed only after it is sent; the first failure stops the run. */
+/**
+ * Sends the oldest scan first. Each is removed only after it is sent; the first failure stops the run.
+ * ponytail: a scan that fails for good (e.g. the app was redeployed mid-event and the old page's action is gone)
+ * holds up the rest until the page is reloaded. Upgrade path: drop or set aside items after N non-network failures.
+ */
 export async function drain(s: ReadWrite, send: (q: QueuedScan) => Promise<void>): Promise<{ sent: number; left: number }> {
   let sent = 0
   for (;;) {

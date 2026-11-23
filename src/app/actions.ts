@@ -5,15 +5,19 @@ import { parseGuestCsv, planImport } from '@/lib/csv'
 import { planGive } from '@/lib/groups'
 import { normalizeTicket } from '@/lib/qr'
 import { checkIn, createEvent, getEvent, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
-import type { EventInfo, ScanOutcome } from '@/lib/types'
+import type { EventInfo, ScanOutcome, Staff } from '@/lib/types'
 
-export async function scanAction(event: string, payload: string): Promise<ScanOutcome> {
-  const staff = await requireStaff('scanner')
+// A scan saved offline is sent later, maybe after someone else signed in on that phone; `by` keeps the original
+// scanner's name. Names are typed at sign-in and never verified, so this trusts nothing new; the role stays the session's.
+const asScanner = (staff: Staff, by?: string) => ({ ...staff, name: by?.trim().slice(0, 60) || staff.name })
+
+export async function scanAction(event: string, payload: string, by?: string): Promise<ScanOutcome> {
+  const staff = asScanner(await requireStaff('scanner'), by)
   return checkIn({ payload, event, staff, method: 'QR' })
 }
 
-export async function manualScanAction(event: string, ticketInput: string): Promise<ScanOutcome> {
-  const staff = await requireStaff('scanner')
+export async function manualScanAction(event: string, ticketInput: string, by?: string): Promise<ScanOutcome> {
+  const staff = asScanner(await requireStaff('scanner'), by)
   const ticket = normalizeTicket(ticketInput)
   if (!ticket) return { result: 'not_found', message: 'Type a ticket number, like 0057' }
   return checkIn({ payload: null, event, ticket, staff, method: 'manual' })

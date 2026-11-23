@@ -45,9 +45,12 @@ const SCAN_TIMEOUT_MS = 8000
 
 const sendQueued = async (q: QueuedScan) => {
   // Any answer counts as sent: a ticket that was already used is logged red by the server and shows in the Check-in log.
-  if (q.method === 'QR') await withTimeout(scanAction(q.event, q.value), SCAN_TIMEOUT_MS)
-  else await withTimeout(manualScanAction(q.event, q.value), SCAN_TIMEOUT_MS)
+  if (q.method === 'QR') await withTimeout(scanAction(q.event, q.value, q.by), SCAN_TIMEOUT_MS)
+  else await withTimeout(manualScanAction(q.event, q.value, q.by), SCAN_TIMEOUT_MS)
 }
+
+// One sync at a time for the whole page, even if the scanner is left and opened again mid-sync.
+let draining = false
 
 const OFFLINE_REJECT = {
   not_ticket: 'This isn’t a Q-Pass ticket for this event.',
@@ -79,16 +82,17 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
   // Send scans saved offline: on load, when the phone comes back online, and every 15 s while any are waiting.
   // ponytail: offline scans get the sync time, not the scan time (check_in uses now()), so the arrivals chart
   // shifts by the outage length. Upgrade path: a p_at parameter on check_in.
-  const draining = useRef(false)
   useEffect(() => {
     const sync = async () => {
       const s = storage()
-      if (!s || draining.current) return
-      draining.current = true
+      if (!s) return
+      setPending(readQueue(s).length) // show the badge at once, even if the first send is slow
+      if (draining) return
+      draining = true
       try {
         setPending((await drain(s, sendQueued)).left)
       } finally {
-        draining.current = false
+        draining = false
       }
     }
     sync()
@@ -170,7 +174,16 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
           return
         }
         // Otherwise keep the scan on this phone and let the person in; it is checked when the connection is back.
-        setPending(enqueue(s, queued).length)
+        const q = enqueue(s, queued)
+        if (!q) {
+          setError('No internet, and this phone’s storage is full, so the scan wasn’t saved. Type the ticket number down and check it in later.')
+          navigator.vibrate?.([60, 60, 60])
+          playTone(false)
+          lock.current.paused = true
+          setPaused(true)
+          return
+        }
+        setPending(q.length)
         setSavedOffline((queued.method === 'QR' ? parsePayload(queued.value)?.ticket : normalizeTicket(queued.value)) ?? '')
         navigator.vibrate?.(80)
         playTone(true)
@@ -221,7 +234,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             if (l.busy || l.paused || (text === l.last && Date.now() - l.lastAt < SAME_CODE_MS)) return
             l.last = text
             l.lastAt = Date.now()
-            run(() => scanAction(event, text), { event, method: 'QR', value: text, at: new Date().toISOString() })
+            run(() => scanAction(event, text), { event, method: 'QR', value: text, at: new Date().toISOString(), by: staff.name })
           },
           undefined,
         )
@@ -394,7 +407,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 onCancel={() => setTyping(false)}
                 onSubmit={(t) => {
                   resume()
-                  run(() => manualScanAction(event, t), { event, method: 'manual', value: t, at: new Date().toISOString() })
+                  run(() => manualScanAction(event, t), { event, method: 'manual', value: t, at: new Date().toISOString(), by: staff.name })
                 }}
               />
             ) : paused ? (
