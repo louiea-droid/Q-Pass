@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { requireStaff } from '@/lib/guard'
-import { listEvents } from '@/lib/store'
+import { listEvents, listTickets } from '@/lib/store'
 import { EditEvent, NewEvent } from './EventForm'
+import EventReport from './EventReport'
 
 export const metadata = { title: 'Events · Q-Pass' }
 
@@ -40,9 +41,12 @@ function Meta({ label, icon, children }: { label: string; icon: React.ReactNode;
   )
 }
 
-export default async function EventsPage() {
+export default async function EventsPage({ searchParams }: PageProps<'/admin/events'>) {
   await requireStaff('admin')
   const events = await listEvents()
+  const { report } = await searchParams
+  const selected = events.find((e) => e.name === report)
+  const reportTickets = selected ? await listTickets(selected.name) : []
 
   if (events.length === 0)
     return (
@@ -70,13 +74,19 @@ export default async function EventsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold">Events</h1>
       </div>
+      {selected && <EventReport event={selected} tickets={reportTickets} />}
       <NewEvent />
       <ul className="grid gap-4 lg:grid-cols-2">
         {events.map((e) => {
           const count = Number(e.ticketTo) - Number(e.ticketFrom) + 1
           const open = e.status === 'open'
+          const isSelected = e.name === selected?.name
           return (
-            <li key={e.name} className={`flex flex-col gap-4 rounded-2xl border bg-surface p-4 sm:p-5 ${open ? 'border-line' : 'border-line opacity-80'}`}>
+            <li
+              key={e.name}
+              aria-current={isSelected ? 'true' : undefined}
+              className={`flex flex-col gap-4 rounded-2xl border bg-surface p-4 sm:p-5 ${isSelected ? 'border-primary ring-2 ring-primary' : 'border-line'} ${open || isSelected ? '' : 'opacity-80'}`}
+            >
               <div className="flex items-start gap-4">
                 {e.date && <DateTile date={e.date} />}
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -119,6 +129,9 @@ export default async function EventsPage() {
                 </Link>
                 <Link href={`/admin/qr?event=${encodeURIComponent(e.name)}`} className={secondaryLink}>
                   QR codes
+                </Link>
+                <Link href={`/admin/events?report=${encodeURIComponent(e.name)}#report`} className={secondaryLink}>
+                  Report
                 </Link>
               </div>
               <EditEvent event={e} />
