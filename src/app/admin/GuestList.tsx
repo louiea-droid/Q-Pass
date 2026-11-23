@@ -197,10 +197,10 @@ function Guest({
         {t.ticket}
       </span>
       <span className="flex min-w-0 flex-[1_1_180px] flex-col gap-0.5">
-        <span className={`text-[15px] wrap-anywhere ${t.name ? 'font-bold' : 'font-medium text-muted'}`}>
+        <span className={`text-[15px] wrap-break-word ${t.name ? 'font-bold' : 'font-medium text-muted'}`}>
           {t.name || 'No name yet'}
           {group && group.total > 1 && (
-            <span className="ml-2 rounded-full bg-soft px-2 py-0.5 align-middle text-xs font-semibold text-muted">
+            <span className="ml-2 inline-block rounded-full bg-soft px-2 py-0.5 align-middle text-xs font-semibold whitespace-nowrap text-muted">
               Group of {group.total}, {group.here} here
             </span>
           )}

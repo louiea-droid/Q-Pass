@@ -203,7 +203,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
         <p className="-mb-1 text-xs text-muted sm:hidden">Swipe the table sideways to see details and notes.</p>
         <div className="relative max-h-[calc(100dvh-13rem)] overflow-auto rounded-xl border border-line">
           <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 z-10 bg-soft text-[13px] text-muted shadow-[0_1px_0_var(--line)]">
+            <thead className="sticky top-0 z-10 bg-soft text-[13px] whitespace-nowrap text-muted shadow-[0_1px_0_var(--line)]">
               <tr>
                 <th scope="col" className="w-20 px-3 py-2.5 font-semibold">Ticket</th>
                 {COLS.map((c) => (
@@ -251,7 +251,8 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                         />
                       </td>
                     ))}
-                    <td className="px-3 py-1.5">
+                    {/* Pills never break across lines; the table scrolls sideways instead. */}
+                    <td className="px-3 py-1.5 whitespace-nowrap">
                       {state === 'saving' ? (
                         <span className="text-[13px] text-muted">Saving…</span>
                       ) : state === 'error' ? (
