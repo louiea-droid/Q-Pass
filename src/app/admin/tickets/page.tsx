@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { requireStaff } from '@/lib/guard'
 import { listEvents, listTickets } from '@/lib/store'
 import EventPicker from '../EventPicker'
+import ImportGuests from './ImportGuests'
 import TicketsTable from './TicketsTable'
 
 export const metadata = { title: 'Tickets · Q-Pass' }
@@ -33,6 +34,7 @@ export default async function TicketsPage({ searchParams }: PageProps<'/admin/ti
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <EventPicker events={events.map((e) => e.name)} value={event.name} />
+          <ImportGuests event={event.name} closed={event.status === 'closed'} />
           <a
             href={`/api/export?event=${encodeURIComponent(event.name)}`}
             className="flex h-10 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:bg-soft"

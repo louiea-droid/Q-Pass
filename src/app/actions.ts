@@ -1,6 +1,7 @@
 'use server'
 
 import { requireStaff } from '@/lib/guard'
+import { parseGuestCsv, planImport } from '@/lib/csv'
 import { planGive } from '@/lib/groups'
 import { normalizeTicket } from '@/lib/qr'
 import { checkIn, createEvent, getEvent, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
@@ -108,6 +109,27 @@ export async function giveTicketsAction(
       return { error: `Already given: ${plan.taken.map((t) => `${t.ticket} (${t.name})`).join(', ')}. Pick other numbers.` }
     await Promise.all(plan.tickets.map((t) => updateTicket(event, t, { name: who, ...(info.trim() && { info: info.trim() }) })))
     return { given: plan.tickets }
+  } catch (e) {
+    return { error: (e as Error).message || 'Something went wrong. Try again.' }
+  }
+}
+
+/** Puts names (and details/notes) from a CSV guest list onto this event's tickets. Blank cells keep what is there. */
+export async function importGuestsAction(
+  event: string,
+  csv: string,
+): Promise<ActionResult & { updated?: number; unknown?: string[]; badLines?: number[] }> {
+  await requireStaff('admin')
+  try {
+    await requireOpenEvent(event)
+    const { rows, badLines } = parseGuestCsv(csv)
+    if (rows.length > 5000) return { error: 'Import up to 5000 rows at a time.' }
+    if (!rows.length) return { error: 'No rows with a ticket number were found. The first column should be the ticket number.' }
+    const { patches, unknown } = planImport((await listTickets(event)).map((t) => t.ticket), rows)
+    // ponytail: 10 updates at a time, about 1 s per 100 rows on Supabase (slower on Sheets). A bulk upsert is the upgrade if lists get big.
+    for (let i = 0; i < patches.length; i += 10)
+      await Promise.all(patches.slice(i, i + 10).map((p) => updateTicket(event, p.ticket, p.patch)))
+    return { updated: patches.length, unknown, badLines }
   } catch (e) {
     return { error: (e as Error).message || 'Something went wrong. Try again.' }
   }
