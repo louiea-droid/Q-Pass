@@ -1,3 +1,4 @@
+import HelpButton from '../HelpButton'
 import Logo from '../Logo'
 import SignOutButton from '../SignOutButton'
 import ThemeToggle from '../ThemeToggle'
@@ -16,6 +17,7 @@ export default function AdminHeader({ staff }: { staff: Staff }) {
         {/* Below desktop width the menu is a floating bar at the bottom (AdminNav), so this stays one slim row.
             No blur on the header there: it would pin that fixed bar to the header instead of the screen. */}
         <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3 lg:order-last">
+          <HelpButton admin />
           <ThemeToggle />
           <span className="hidden truncate text-sm text-muted sm:inline">{staff.name}, admin</span>
           <SignOutButton className="h-10 shrink-0 rounded-full border border-line-strong px-3.5 text-sm font-semibold transition-colors duration-200 hover:bg-soft" />

@@ -11,6 +11,7 @@ import { type QueuedScan, checkOffline, drain, enqueue, isNetworkError, readQueu
 import { normalizeTicket, parsePayload } from '@/lib/qr'
 import type { ScanOutcome, Staff } from '@/lib/types'
 import ThemeToggle from '../ThemeToggle'
+import HelpButton from '../HelpButton'
 import { TabBar } from '../admin/AdminNav'
 import { playTone, unlockAudio, useWakeLock } from './door'
 
@@ -287,6 +288,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
         {share}
         {/* On computers an admin has these in the admin header above. */}
         <span className={`contents ${staff.role === 'admin' ? 'lg:hidden' : ''}`}>
+          <HelpButton admin={staff.role === 'admin'} />
           <ThemeToggle />
         </span>
         <details className={`relative ${staff.role === 'admin' ? 'lg:hidden' : ''}`}>
