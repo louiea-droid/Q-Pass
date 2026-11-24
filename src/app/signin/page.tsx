@@ -10,7 +10,15 @@ export default async function SignIn() {
     (e: Error) => e.message,
   )
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-6 pb-10 sm:px-6">
+    <>
+    {/* A faint drifting QR pattern with the scanner's lime line sweeping over it. Still when the device asks for less motion (globals.css). */}
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden">
+      <div className="qr-bg absolute inset-0 opacity-[0.07]" />
+      {/* Fades the pattern out in the middle so the card sits on clean paper. */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--paper)_25%,transparent_70%)]" />
+      <span className="absolute inset-x-0 h-0.5 animate-sweep bg-accent shadow-[0_0_24px_6px_var(--accent)]" />
+    </div>
+    <main className="relative mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-6 pb-10 sm:px-6">
       <header className="flex items-center justify-between">
         <span className="flex items-center gap-3 text-xl font-extrabold text-primary">
           <Logo size={40} />
@@ -34,5 +42,6 @@ export default async function SignIn() {
         </div>
       </section>
     </main>
+    </>
   )
 }
