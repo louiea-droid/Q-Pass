@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { updateTicketAction } from '../../actions'
 import Pager from '../Pager'
 import GiveTickets, { GiveButton } from './GiveTickets'
@@ -14,10 +14,10 @@ type Fields = { name: string; info: string; notes: string }
 type Col = keyof Fields
 type RowState = 'saving' | 'saved' | 'error'
 
-const COLS: { key: Col; label: string; width: string; hint: string }[] = [
-  { key: 'name', label: 'Name', width: 'min-w-56', hint: 'Add a name' },
-  { key: 'info', label: 'Details', width: 'min-w-48', hint: 'Add details' },
-  { key: 'notes', label: 'Notes', width: 'min-w-48', hint: 'Add a note' },
+const COLS: { key: Col; label: string; width: string }[] = [
+  { key: 'name', label: 'Name', width: 'min-w-56' },
+  { key: 'info', label: 'Details', width: 'min-w-48' },
+  { key: 'notes', label: 'Note', width: 'min-w-48' },
 ]
 const FILTERS: { id: TicketFilter; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -39,6 +39,20 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
   const [giving, setGiving] = useState(false)
+  // The bigger note editor: a native popover (top layer, so the scrolling table can't clip it).
+  const [pop, setPop] = useState<{ ticket: string; top: number; left: number } | null>(null)
+  const popRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!pop) return
+    popRef.current?.showPopover()
+    popRef.current?.querySelector('textarea')?.focus()
+  }, [pop])
+  // A note too long for its cell moves into the bigger editor, just below the cell.
+  function growNote(ticket: string, el: HTMLInputElement) {
+    if (el.scrollWidth <= el.clientWidth) return
+    const r = el.getBoundingClientRect()
+    setPop({ ticket, top: r.bottom + 6, left: Math.max(8, Math.min(r.left, innerWidth - 296)) })
+  }
 
   // Filter on what's typed, so a name you just entered moves the ticket to "Given" right away.
   const rows = tickets.map((t) => ({ ...t, ...draft[t.ticket] }))
@@ -238,8 +252,13 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                           value={draft[t.ticket][c.key]}
                           readOnly={readOnly}
                           autoComplete="off"
-                          placeholder={readOnly ? '' : c.hint}
-                          onChange={(e) => edit(t.ticket, c.key, e.target.value)}
+                          placeholder="—"
+                          title={draft[t.ticket][c.key] || undefined}
+                          onChange={(e) => {
+                            edit(t.ticket, c.key, e.target.value)
+                            if (c.key === 'notes') growNote(t.ticket, e.currentTarget)
+                          }}
+                          onFocus={(e) => c.key === 'notes' && !readOnly && growNote(t.ticket, e.currentTarget)}
                           onBlur={() => save(t.ticket)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -247,7 +266,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                               next(t.ticket, c.key)
                             } else if (e.key === 'Escape') edit(t.ticket, c.key, saved[t.ticket][c.key])
                           }}
-                          className={readOnly ? 'h-9 w-full border-0 bg-transparent px-2 text-sm' : 'h-9 w-full rounded-md border border-line-strong bg-paper px-2.5 text-sm transition-colors duration-150 placeholder:text-muted/80 hover:border-primary/60 focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/25 focus:outline-none'}
+                          className={readOnly ? 'h-9 w-full border-0 bg-transparent px-2 text-sm' : `h-9 w-full rounded-md border border-transparent bg-transparent px-2.5 text-sm transition-colors duration-150 placeholder:text-muted/60 hover:border-primary/60 focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/25 focus:outline-none`}
                         />
                       </td>
                     ))}
@@ -295,6 +314,54 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
           </table>
         </div>
         </>
+      )}
+
+      {pop && (
+        // ponytail: fixed at the button's spot when opened; it doesn't follow if the table scrolls (light-dismiss closes it on outside clicks).
+        <div
+          key={pop.ticket}
+          ref={popRef}
+          popover="auto"
+          onToggle={(e) => e.newState === 'closed' && setPop((p) => (p?.ticket === pop.ticket ? null : p))}
+          style={{ top: pop.top, left: pop.left }}
+          className="fixed inset-auto m-0 w-72 rounded-xl border border-line bg-surface p-3 text-ink shadow-2xl"
+        >
+          <label htmlFor="note-pop" className="mb-1.5 block text-[13px] font-semibold text-muted">
+            Note for ticket {pop.ticket}
+          </label>
+          <textarea
+            id="note-pop"
+            rows={4}
+            // Keep typing where you left off in the cell.
+            onFocus={(e) => e.currentTarget.setSelectionRange(e.currentTarget.value.length, e.currentTarget.value.length)}
+            value={draft[pop.ticket].notes}
+            onChange={(e) => edit(pop.ticket, 'notes', e.target.value)}
+            // Clicking Save, clicking outside or pressing Enter all blur the box, which saves it.
+            onBlur={(e) => !e.currentTarget.dataset.cancel && save(pop.ticket)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                e.currentTarget.blur()
+                popRef.current?.hidePopover()
+              } else if (e.key === 'Escape') {
+                // Escape throws the typing away; mark it so the blur doesn't save it.
+                e.currentTarget.dataset.cancel = '1'
+                edit(pop.ticket, 'notes', saved[pop.ticket].notes)
+              }
+            }}
+            className="w-full resize-none rounded-md border border-line-strong bg-paper px-2.5 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/25 focus:outline-none"
+          />
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className="text-xs text-muted">Enter saves, Esc cancels</span>
+            <button
+              type="button"
+              onClick={() => popRef.current?.hidePopover()}
+              className="h-8 rounded-md bg-primary px-3 text-[13px] font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover"
+            >
+              Save
+            </button>
+          </div>
+        </div>
       )}
 
       <p role="status" className={`text-sm ${Object.values(rowState).includes('error') ? 'font-semibold text-bad-text' : 'text-muted'}`}>

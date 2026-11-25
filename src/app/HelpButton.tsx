@@ -50,9 +50,17 @@ const ADMIN: Topic[] = [
   {
     q: 'Give out tickets',
     steps: [
-      'On Tickets, type the name of the person getting the tickets and the ticket numbers. A dash adds a run, like 10-14.',
+      'For one person, find their ticket number in the table, click the Name cell and type their name.',
+      'For a family or several tickets, use “Give tickets”: type the name and the ticket numbers. A dash adds a run, like 10-14.',
       'Have a guest list? Use Import to bring it in from a file.',
-      'Names, details and notes in the table save as you type.',
+    ],
+  },
+  {
+    q: 'Edit names, details and notes',
+    steps: [
+      'Click any cell in the table to change it. A dash (—) means it’s empty.',
+      'Press Enter or click away to save. Esc undoes what you typed.',
+      'A note too long for its cell opens in a bigger box. Shift+Enter starts a new line.',
     ],
   },
   {
