@@ -32,7 +32,7 @@ export function enqueue(s: ReadWrite, scan: Omit<QueuedScan, 'id'>): QueuedScan[
 
 /**
  * Sends the oldest scan first. Each is removed only after it is sent; the first failure stops the run.
- * ponytail: a scan that fails for good (e.g. the app was redeployed mid-event and the old page's action is gone)
+ * ponytail: a scan that fails for good (e.g. the server keeps answering with an error)
  * holds up the rest until the page is reloaded. Upgrade path: drop or set aside items after N non-network failures.
  */
 export async function drain(s: ReadWrite, send: (q: QueuedScan) => Promise<void>): Promise<{ sent: number; left: number }> {
@@ -52,26 +52,12 @@ export async function drain(s: ReadWrite, send: (q: QueuedScan) => Promise<void>
   return { sent, left: readQueue(s).length }
 }
 
-/** Offline, or the request never reached the server (Chrome: "Failed to fetch", Safari: "Load failed"). */
+/**
+ * Offline, the request never reached the server (Chrome: "Failed to fetch", Safari: "Load failed"),
+ * or the phone gave up waiting and cancelled it (AbortError): on weak Wi-Fi requests hang instead of failing.
+ */
 export function isNetworkError(e: unknown, online: boolean): boolean {
-  return !online || /fetch|network|load failed|connection/i.test(String((e as Error)?.message ?? e))
-}
-
-/** Rejects with a network-style error if `p` takes longer than `ms`: on weak Wi-Fi a request can hang instead of failing. */
-export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Network timeout: no answer from the server')), ms)
-    p.then(
-      (v) => {
-        clearTimeout(timer)
-        resolve(v)
-      },
-      (e) => {
-        clearTimeout(timer)
-        reject(e)
-      },
-    )
-  })
+  return !online || (e as Error)?.name === 'AbortError' || /fetch|network|load failed|connection/i.test(String((e as Error)?.message ?? e))
 }
 
 const ticketOf = (s: Omit<QueuedScan, 'id'>) => {

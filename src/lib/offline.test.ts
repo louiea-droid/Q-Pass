@@ -1,5 +1,5 @@
-import { expect, test, vi } from 'vitest'
-import { QUEUE_KEY, checkOffline, drain, enqueue, isNetworkError, readQueue, withTimeout } from './offline'
+import { expect, test } from 'vitest'
+import { QUEUE_KEY, checkOffline, drain, enqueue, isNetworkError, readQueue } from './offline'
 
 const fakeStorage = () => {
   const m = new Map<string, string>()
@@ -63,20 +63,8 @@ test('isNetworkError: offline, or a failed request (Chrome and Safari wording); 
   expect(isNetworkError(new Error('Event not found'), true)).toBe(false)
 })
 
-test('withTimeout: a request that hangs fails as a network error, so the scan is saved offline', async () => {
-  vi.useFakeTimers()
-  try {
-    const p = withTimeout(new Promise(() => {}), 8000)
-    const caught = p.catch((e) => e)
-    vi.advanceTimersByTime(8000)
-    expect(isNetworkError(await caught, true)).toBe(true)
-  } finally {
-    vi.useRealTimers()
-  }
-})
-
-test('withTimeout: a quick answer passes through', async () => {
-  expect(await withTimeout(Promise.resolve(7), 8000)).toBe(7)
+test('isNetworkError: a request the phone cancelled after waiting too long counts as offline', () => {
+  expect(isNetworkError(new DOMException('The operation was aborted.', 'AbortError'), true)).toBe(true)
 })
 
 test('checkOffline: the phone stops codes it already knows are wrong, and a ticket scanned twice offline', () => {

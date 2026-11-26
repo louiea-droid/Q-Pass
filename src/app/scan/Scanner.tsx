@@ -3,11 +3,10 @@
 import type { Html5Qrcode } from 'html5-qrcode'
 import Link from 'next/link'
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { manualScanAction, scanAction } from '../actions'
 import Select from '../Select'
 import SignOutButton from '../SignOutButton'
 import { headline } from '@/lib/display'
-import { type QueuedScan, checkOffline, drain, enqueue, isNetworkError, readQueue, withTimeout } from '@/lib/offline'
+import { type QueuedScan, checkOffline, drain, enqueue, isNetworkError, readQueue } from '@/lib/offline'
 import { normalizeTicket, parsePayload } from '@/lib/qr'
 import type { ScanOutcome, Staff } from '@/lib/types'
 import ThemeToggle from '../ThemeToggle'
@@ -45,14 +44,44 @@ const storage = () => {
 // A scan with no answer by then is treated as offline: on weak Wi-Fi requests hang instead of failing.
 const SCAN_TIMEOUT_MS = 8000
 
-const sendQueued = async (q: QueuedScan) => {
-  // Any answer counts as sent: a ticket that was already used is logged red by the server and shows in the Action log.
-  if (q.method === 'QR') await withTimeout(scanAction(q.event, q.value, q.by), SCAN_TIMEOUT_MS)
-  else await withTimeout(manualScanAction(q.event, q.value, q.by), SCAN_TIMEOUT_MS)
+/**
+ * Sends one scan; gives up after SCAN_TIMEOUT_MS and treats it as offline.
+ * ponytail: the server may still finish a scan the phone gave up on, so a late "already used" is lost and the queued
+ * copy later logs a red repeat. Rare (it needs an 8 s answer); the upgrade is the server dropping a resend it already saw.
+ */
+async function postScan(q: Pick<QueuedScan, 'event' | 'value' | 'method' | 'by'>): Promise<ScanOutcome> {
+  const stop = new AbortController()
+  const timer = setTimeout(() => stop.abort(), SCAN_TIMEOUT_MS)
+  try {
+    const r = await fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: q.event, value: q.value, method: q.method, by: q.by }),
+      signal: stop.signal,
+      cache: 'no-store',
+    })
+    if (r.status === 401) {
+      // Signed out (session expired): a full load of the sign-in page, as the old server-action redirect did.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      location.assign('/signin')
+      throw new Error('Signed out')
+    }
+    const body = await r.json()
+    if (!r.ok) throw new Error(body.error ?? `Error ${r.status}`)
+    return body
+  } finally {
+    clearTimeout(timer)
+  }
 }
+
+// Any answer counts as sent: a ticket that was already used is logged red by the server and shows in the Action log.
+const sendQueued = async (q: QueuedScan) => void (await postScan(q))
 
 // One sync at a time for the whole page, even if the scanner is left and opened again mid-sync.
 let draining = false
+// ...and across tabs: the queue in localStorage is shared, so two open scanner tabs would send each scan twice.
+const oneTabAtATime = (fn: () => Promise<void>) =>
+  navigator.locks ? navigator.locks.request('qpass-drain', { ifAvailable: true }, (lock) => lock && fn()) : fn()
 
 const OFFLINE_REJECT = {
   not_ticket: 'This isn’t a Q-Pass ticket for this event.',
@@ -92,7 +121,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
       if (draining) return
       draining = true
       try {
-        setPending((await drain(s, sendQueued)).left)
+        await oneTabAtATime(async () => setPending((await drain(s, sendQueued)).left))
       } finally {
         draining = false
       }
@@ -144,14 +173,14 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
     } catch {}
   }
 
-  async function run(action: () => Promise<ScanOutcome>, queued: Omit<QueuedScan, 'id'>) {
+  async function run(queued: Omit<QueuedScan, 'id'>) {
     lock.current.busy = true
     setBusy(true)
     setError('')
     setSavedOffline(null)
     setTyping(false)
     try {
-      const o = await withTimeout(action(), SCAN_TIMEOUT_MS)
+      const o = await postScan(queued)
       setOutcome(o)
       const ok = o.result === 'checked_in'
       navigator.vibrate?.(ok ? 80 : [60, 60, 60])
@@ -236,7 +265,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             if (l.busy || l.paused || (text === l.last && Date.now() - l.lastAt < SAME_CODE_MS)) return
             l.last = text
             l.lastAt = Date.now()
-            run(() => scanAction(event, text), { event, method: 'QR', value: text, at: new Date().toISOString(), by: staff.name })
+            run({ event, method: 'QR', value: text, at: new Date().toISOString(), by: staff.name })
           },
           undefined,
         )
@@ -416,7 +445,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 onCancel={() => setTyping(false)}
                 onSubmit={(t) => {
                   resume()
-                  run(() => manualScanAction(event, t), { event, method: 'manual', value: t, at: new Date().toISOString(), by: staff.name })
+                  run({ event, method: 'manual', value: t, at: new Date().toISOString(), by: staff.name })
                 }}
               />
             ) : paused ? (

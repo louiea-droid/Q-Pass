@@ -23,7 +23,7 @@ const pad = (n: number) => String(n).padStart(4, '0')
 export function parseTicketList(text: string): { numbers: string[]; invalid: string[] } {
   const numbers: string[] = []
   const invalid: string[] = []
-  for (const token of text.split(/[\s,;]+/).filter(Boolean)) {
+  for (const token of text.replace(/\s*([-–])\s*/g, '$1').split(/[\s,;]+/).filter(Boolean)) {
     const run = /^(\d{1,4})[-–](\d{1,4})$/.exec(token)
     const one = /^\d{1,4}$/.test(token)
     if (one) numbers.push(pad(Number(token)))

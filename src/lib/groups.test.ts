@@ -27,6 +27,7 @@ test('ticket list: random numbers separated by commas or spaces, zero-padded', (
 
 test('ticket list: dashes make a run, including en dashes', () => {
   expect(parseTicketList('10-12, 0200–0201')).toEqual({ numbers: ['0010', '0011', '0012', '0200', '0201'], invalid: [] })
+  expect(parseTicketList('10 - 12 20 –21')).toEqual({ numbers: ['0010', '0011', '0012', '0020', '0021'], invalid: [] })
 })
 
 test('ticket list: repeats are kept once; junk and backwards runs are reported', () => {

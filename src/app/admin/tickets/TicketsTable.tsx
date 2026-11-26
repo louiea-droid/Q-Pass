@@ -27,11 +27,21 @@ const FILTERS: { id: TicketFilter; label: string }[] = [
 ]
 
 const fields = (t: Ticket): Fields => ({ name: t.name, info: t.info, notes: t.notes })
+const same = (a?: Fields, b?: Fields) => !a || !b || (a.name === b.name && a.info === b.info && a.notes === b.notes)
+const byTicket = (tickets: Ticket[]) => Object.fromEntries(tickets.map((t) => [t.ticket, fields(t)]))
 const fmt = (iso: string) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '')
 
 export default function TicketsTable({ event, tickets, readOnly }: { event: string; tickets: Ticket[]; readOnly: boolean }) {
-  const [draft, setDraft] = useState<Record<string, Fields>>(() => Object.fromEntries(tickets.map((t) => [t.ticket, fields(t)])))
+  const [draft, setDraft] = useState<Record<string, Fields>>(() => byTicket(tickets))
   const [saved, setSaved] = useState<Record<string, Fields>>(draft)
+  // Fresh data from the server (after "Import names" or a refresh): take it, except on rows being edited right now.
+  const [seen, setSeen] = useState(tickets)
+  if (tickets !== seen) {
+    setSeen(tickets)
+    const fresh = byTicket(tickets)
+    setDraft((d) => Object.fromEntries(tickets.map((t) => [t.ticket, same(d[t.ticket], saved[t.ticket]) ? fresh[t.ticket] : d[t.ticket]])))
+    setSaved(fresh)
+  }
   const [rowState, setRowState] = useState<Record<string, RowState>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [query, setQuery] = useState('')
@@ -42,6 +52,9 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
   // The bigger note editor: a native popover (top layer, so the scrolling table can't clip it).
   const [pop, setPop] = useState<{ ticket: string; top: number; left: number } | null>(null)
   const popRef = useRef<HTMLDivElement>(null)
+  // A mouse press focuses the cell before the button comes up; opening the box then would close it again at once
+  // (the release lands outside it). So a click opens it on click, and focus opens it only from the keyboard.
+  const pressing = useRef(false)
   useEffect(() => {
     if (!pop) return
     popRef.current?.showPopover()
@@ -54,9 +67,10 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
     setPop({ ticket, top: r.bottom + 6, left: Math.max(8, Math.min(r.left, innerWidth - 296)) })
   }
 
-  // Filter on what's typed, so a name you just entered moves the ticket to "Given" right away.
-  const rows = tickets.map((t) => ({ ...t, ...draft[t.ticket] }))
-  const matches = rows.filter((t) => matchTicket(t, query, filter))
+  // Filter on what's saved, and keep a row with unsaved typing: otherwise typing a name under "Not given"
+  // would hide the row mid-word, and its input with it, before the edit is saved.
+  const rows = tickets.map((t) => ({ ...t, ...saved[t.ticket] }))
+  const matches = rows.filter((t) => !same(draft[t.ticket], saved[t.ticket]) || matchTicket(t, query, filter))
   const pages = Math.max(1, Math.ceil(matches.length / size))
   const current = Math.min(page, pages - 1)
   const shown = matches.slice(current * size, current * size + size)
@@ -80,10 +94,13 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
 
   async function save(ticket: string) {
     const d = draft[ticket], s = saved[ticket]
-    if (d.name === s.name && d.info === s.info && d.notes === s.notes) return
+    // Nothing to save (e.g. Escape put it back): clear a "Not saved" left from an earlier try.
+    if (same(d, s)) return setRowState((x) => (x[ticket] === 'error' ? { ...x, [ticket]: 'saved' } : x))
     setRowState((r) => ({ ...r, [ticket]: 'saving' }))
     try {
-      const r = await updateTicketAction(event, ticket, d)
+      // Only the fields that changed, so this never writes back stale values over someone else's edit.
+      const changed = Object.fromEntries((['name', 'info', 'notes'] as const).filter((k) => d[k] !== s[k]).map((k) => [k, d[k]]))
+      const r = await updateTicketAction(event, ticket, changed)
       if (r.error) throw new Error(r.error)
       setSaved((x) => ({ ...x, [ticket]: d }))
       setRowState((x) => ({ ...x, [ticket]: 'saved' }))
@@ -258,7 +275,20 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                             edit(t.ticket, c.key, e.target.value)
                             if (c.key === 'notes') growNote(t.ticket, e.currentTarget)
                           }}
-                          onFocus={(e) => c.key === 'notes' && !readOnly && growNote(t.ticket, e.currentTarget)}
+                          // Not when focus comes back from the note box as it closes, or it would pop right open again.
+                          onFocus={(e) =>
+                            c.key === 'notes' &&
+                            !readOnly &&
+                            !pressing.current &&
+                            !(pop?.ticket === t.ticket && (e.relatedTarget as Element | null)?.closest('[popover]')) &&
+                            growNote(t.ticket, e.currentTarget)
+                          }
+                          onPointerDown={() => c.key === 'notes' && (pressing.current = true)}
+                          onClick={(e) => {
+                            if (c.key !== 'notes') return
+                            pressing.current = false
+                            if (!readOnly) growNote(t.ticket, e.currentTarget)
+                          }}
                           onBlur={() => save(t.ticket)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -333,7 +363,10 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
             id="note-pop"
             rows={4}
             // Keep typing where you left off in the cell.
-            onFocus={(e) => e.currentTarget.setSelectionRange(e.currentTarget.value.length, e.currentTarget.value.length)}
+            onFocus={(e) => {
+              delete e.currentTarget.dataset.cancel // an Escape from last time must not block this edit's save
+              e.currentTarget.setSelectionRange(e.currentTarget.value.length, e.currentTarget.value.length)
+            }}
             value={draft[pop.ticket].notes}
             onChange={(e) => edit(pop.ticket, 'notes', e.target.value)}
             // Clicking Save, clicking outside or pressing Enter all blur the box, which saves it.

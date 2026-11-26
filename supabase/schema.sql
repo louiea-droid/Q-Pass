@@ -46,13 +46,24 @@ alter table tickets enable row level security;
 alter table log     enable row level security;
 
 -- One atomic step: mark the ticket checked in if it's still free, and log the attempt.
--- Returns the ticket as it was BEFORE this scan, or null if the ticket doesn't exist.
+-- Returns the ticket as it was BEFORE this scan, or null if the ticket doesn't exist,
+-- or {"blocked": "missing"} / {"blocked": "closed"} when the event was deleted or is closed (checked here, so a scan is one trip).
 create or replace function check_in(p_event text, p_ticket text, p_staff_name text, p_staff_role text, p_method text)
 returns json language plpgsql security definer set search_path = public as $$
 declare
   before tickets%rowtype;
+  st text;
   res text;
 begin
+  select status into st from events where name = p_event;
+  if not found then
+    return json_build_object('blocked', 'missing');
+  end if;
+  if st = 'closed' then
+    insert into log (event, ticket, result, staff_name, staff_role, method)
+      values (p_event, p_ticket, 'event_closed', p_staff_name, p_staff_role, p_method);
+    return json_build_object('blocked', 'closed');
+  end if;
   select * into before from tickets where event = p_event and ticket = p_ticket for update;
   if not found then
     res := 'not_found';

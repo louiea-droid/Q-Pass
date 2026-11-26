@@ -28,6 +28,12 @@ beforeEach(() => {
     const req = { method: init.method ?? 'GET', path, query: u.searchParams, body: init.body ? JSON.parse(init.body) : undefined, headers: init.headers ?? {} }
     reqs.push(req)
     if (req.headers.apikey !== 'service-key') return json({ message: 'Invalid API key' }, 401)
+    if (path === 'rpc/check_in') {
+      // Like schema.sql: the event's existence and status are checked first.
+      const ev = eventsRows.find((e) => e.name === (req.body as { p_event: string }).p_event)
+      if (!ev) return json({ blocked: 'missing' })
+      if (ev.status === 'closed') return json({ blocked: 'closed' })
+    }
     if (path.startsWith('rpc/')) return json(rpc[path.slice(4)]!(req.body as Record<string, unknown>))
     if (path === 'log') return failLog ? json({ message: 'boom' }, 500) : json(undefined, 201)
     if (path === 'events' && req.method === 'GET') return json(eventsRows)
@@ -146,6 +152,15 @@ test('a check-in for someone holding several tickets reports how many of the gro
   const { checkIn } = await import('./store')
   const r = await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
   expect(r).toMatchObject({ result: 'checked_in', name: 'Juan', group: { total: 3, here: 2 } })
+  // Asks only for that name's tickets, not the whole event.
+  expect(reqs.find((x) => x.path === 'tickets' && x.method === 'GET')?.query.get('name')).toBe('ilike.%juan%')
+})
+
+test('the group lookup escapes LIKE wildcards and matches any spacing between words', async () => {
+  rpc.check_in = () => row('0001', { name: ' Mary_Ann  100% ' })
+  const { checkIn } = await import('./store')
+  await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
+  expect(reqs.find((x) => x.path === 'tickets' && x.method === 'GET')?.query.get('name')).toBe('ilike.%mary\\_ann%100\\%%')
 })
 
 test('a single-ticket guest has no group line, and a failed group lookup never blocks the check-in', async () => {
@@ -172,4 +187,21 @@ test('a scan for a deleted event is answered red, not thrown (so offline scans n
   const { checkIn } = await import('./store-supabase')
   const r = await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
   expect(r).toMatchObject({ result: 'event_closed', message: 'This event was deleted' })
+})
+
+test('a scan for a closed event is answered red and never checks the ticket in', async () => {
+  eventsRows[0].status = 'closed'
+  rpc.check_in = () => {
+    throw new Error('must not reach the ticket')
+  }
+  const { checkIn } = await import('./store-supabase')
+  const r = await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
+  expect(r).toMatchObject({ result: 'event_closed', message: 'This event is closed' })
+})
+
+test('a good scan is one database trip: no separate event lookup', async () => {
+  rpc.check_in = () => row('0001')
+  const { checkIn } = await import('./store-supabase')
+  await checkIn({ payload: 'TAC Gala-0001', event: 'TAC Gala', staff, method: 'QR' })
+  expect(reqs.map((x) => x.path)).toEqual(['rpc/check_in'])
 })

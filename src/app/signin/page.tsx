@@ -4,7 +4,7 @@ import SignInForm from './SignInForm'
 import ThemeToggle from '../ThemeToggle'
 
 export default async function SignIn() {
-  // Checks the database connection (and, in Sheet mode, creates the Events and Log tabs).
+  // Checks the database connection.
   const setupError = await ensureSchema().then(
     () => null,
     (e: Error) => e.message,

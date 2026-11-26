@@ -6,12 +6,9 @@ Everything runs on free plans. You don't need a card.
 
 ## Where the data lives
 
-The app can keep its data in one of two places. It picks **Supabase** when `SUPABASE_URL` is set, and the **Google Sheet** otherwise.
+The data lives in **Supabase**, a free online database. A scan takes a fraction of a second. To get a spreadsheet, use **Download CSV** on the People page; it opens in Excel or Google Sheets.
 
-- **Supabase (recommended).** A free online database. A scan takes a fraction of a second. To get a spreadsheet, use **Download CSV** on the People page; it opens in Excel or Google Sheets.
-- **Google Sheet (through Apps Script).** The data sits in a Sheet you can open and edit directly. It works, but Google's script service is slow: we measured 1.5 to 14 seconds per scan. Fine for a small, quiet event; risky with a queue at the door.
-
-Either way, two phones scanning the same ticket at the same moment is safe: only one of them shows green.
+Two phones scanning the same ticket at the same moment is safe: only one of them shows green.
 
 ## Signing in
 
@@ -58,19 +55,6 @@ Open <http://localhost:3000>, sign in with your name and the admin passcode, the
 
 Phone cameras only work on `https://` sites, so test scanning on a phone after putting it online (or use your laptop's webcam on localhost).
 
-## Using the Google Sheet instead
-
-Leave `SUPABASE_URL` empty and set these instead:
-
-1. In an empty Google Sheet, open **Extensions → Apps Script**, paste everything from `apps-script/Code.gs`, and save.
-2. **Project Settings → Script properties**: add `SECRET` with the same value as `APPS_SCRIPT_SECRET` in `.env.local` (random text, generate it like `AUTH_SECRET`).
-3. **Deploy → New deployment → Web app**, **Execute as: Me**, **Who has access: Anyone**. Authorize it (on "Google hasn't verified this app", choose **Advanced → Go to …**: it's your own script).
-4. Put the web app URL (ends in `/exec`) in `APPS_SCRIPT_URL`.
-
-The app creates the `Events` and `Log` tabs on first visit. Editing the script later needs **Deploy → Manage deployments → edit → New version**. Don't delete rows in an event tab; sorting and filtering are fine.
-
-Moving between Supabase and the Sheet doesn't copy data across. Pick one before you print QR codes and enter names.
-
 ## Test the camera on a phone before going online
 
 Phones only allow the camera on secure (https) sites. To try it on your own network first:
@@ -90,7 +74,7 @@ Phones only allow the camera on secure (https) sites. To try it on your own netw
 
 ## Handing out tickets
 
-For a family or group, click **Give tickets**, type one name, then type each ticket number you handed over and press Enter (`10-14` adds a run). It won't overwrite tickets already given to someone else. To take tickets back, click **Remove** on their rows. Tickets with the same name count as one group, and the scanner shows how many of the group are already in (for example "2 of 5 in this group are here").
+For a family or group, click **Give tickets**, type one name, then type the ticket numbers you handed over, separated by a space or comma (`10-14` adds a run). It won't overwrite tickets already given to someone else. To take tickets back, click **Remove** on their rows. Tickets with the same name count as one group, and the scanner shows how many of the group are already in (for example "2 of 5 in this group are here").
 
 For single tickets, open **Tickets**, find the ticket number you are handing over, and type the person's name (plus any details). A ticket with a name counts as **given**; clear the name to make it not given again. Press **Enter** to jump to the next ticket's name. Changes save on their own. Names are optional: a ticket with no name still works at the door.
 
@@ -114,8 +98,7 @@ For single tickets, open **Tickets**, find the ticket number you are handing ove
 - **"Can't reach the database: Invalid API key"**: `SUPABASE_SERVICE_ROLE_KEY` is wrong or is the public anon key. Use the service_role key.
 - **"relation … does not exist"**: run `supabase/schema.sql` in the Supabase SQL Editor.
 - **Nothing loads and Supabase shows "Paused"**: click **Restore** in the Supabase dashboard.
-- **"Can't reach the database: Wrong secret"** (Sheet mode): `APPS_SCRIPT_SECRET` must match the script's `SECRET` property exactly.
 
 ## For developers
 
-Next.js 16 (App Router), React 19, Tailwind 4. `src/lib/store.ts` picks a backend: `store-supabase.ts` (PostgREST with the service_role key; atomic `check_in` and one-call `dashboard` functions in `supabase/schema.sql`) or `store-sheets.ts` (calls `apps-script/Code.gs`). Both export the same functions. Check-in rules are in `src/lib/checkin.ts`, QR parsing in `src/lib/qr.ts`, sessions in `src/lib/session.ts`, CSV in `src/lib/csv.ts`, all unit-tested (`npm test`). Design and plan: `docs/plans/`.
+Next.js 16 (App Router), React 19, Tailwind 4. When `supabase/schema.sql` changes, run it again in the Supabase SQL Editor **before** deploying the new app (it is safe to re-run). Data access is in `src/lib/store-supabase.ts` (PostgREST with the service_role key; atomic `check_in` and one-call `dashboard` functions in `supabase/schema.sql`), used through `src/lib/store.ts`. Door scans go through `src/app/api/scan/route.ts`. Check-in rules are in `src/lib/checkin.ts`, QR parsing in `src/lib/qr.ts`, sessions in `src/lib/session.ts`, CSV in `src/lib/csv.ts`, all unit-tested (`npm test`). Design and plan: `docs/plans/`.

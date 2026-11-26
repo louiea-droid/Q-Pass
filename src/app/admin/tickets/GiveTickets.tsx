@@ -5,7 +5,7 @@ import { giveTicketsAction } from '../../actions'
 import { parseTicketList, planGive } from '@/lib/groups'
 
 const input =
-  'h-10 w-full rounded-lg border border-line-strong bg-surface px-3 text-[15px] font-medium focus:border-primary focus:ring-2 focus:ring-primary/25 focus:outline-none'
+  'h-10 w-full rounded-lg border border-line-strong bg-surface px-3 text-base font-medium focus:border-primary focus:ring-2 focus:ring-primary/25 focus:outline-none'
 
 /** The "Give tickets" button; the form opens below the table header. */
 export function GiveButton({ onClick }: { onClick: () => void }) {
@@ -73,6 +73,13 @@ export default function GiveTickets({
           ? 'Give up to 50 tickets at a time.'
           : ''
   const n = parsed.numbers.length
+  // Back-to-back numbers show as one chip (010–014); a red number breaks the run so it stays visible.
+  const runs: string[][] = []
+  for (const c of [...chips].sort((a, b) => Number(a) - Number(b))) {
+    const last = runs.at(-1)
+    if (last && Number(c) === Number(last.at(-1)) + 1 && takenSet.has(c) === takenSet.has(last[0])) last.push(c)
+    else runs.push([c])
+  }
 
   return (
     <dialog
@@ -95,8 +102,8 @@ export default function GiveTickets({
             error: 'Couldn’t save. Check the connection and try again.',
             given: undefined,
           }))
+          if (r.given?.length) onGiven(r.given, name.trim(), info.trim()) // even with an error, some may have gone through
           if (r.error || !r.given) return setError(r.error ?? 'Couldn’t save.')
-          onGiven(r.given, name.trim(), info.trim())
           onDone(
             r.given.length === 1
               ? `Gave ticket ${r.given[0]} to ${name.trim()}.`
@@ -135,18 +142,18 @@ export default function GiveTickets({
           Ticket numbers
         </label>
         <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-2 py-1.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25">
-          {chips.map((c) => (
+          {runs.map((r) => (
             <span
-              key={c}
+              key={r[0]}
               className={`flex h-7 items-center gap-1 rounded-md pr-1 pl-2 text-sm font-bold tabular-nums ${
-                takenSet.has(c) ? 'bg-bad/15 text-bad-text' : 'bg-soft text-ink'
+                takenSet.has(r[0]) ? 'bg-bad/15 text-bad-text' : 'bg-soft text-ink'
               }`}
             >
-              {c}
+              {r.length > 1 ? `${r[0]}–${r.at(-1)}` : r[0]}
               <button
                 type="button"
-                onClick={() => setChips((x) => x.filter((n) => n !== c))}
-                aria-label={`Remove ticket ${c}`}
+                onClick={() => setChips((x) => x.filter((n) => !r.includes(n)))}
+                aria-label={r.length > 1 ? `Remove tickets ${r[0]} to ${r.at(-1)}` : `Remove ticket ${r[0]}`}
                 className="flex size-5 items-center justify-center rounded text-muted hover:bg-line hover:text-ink"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
@@ -160,20 +167,24 @@ export default function GiveTickets({
             value={typing}
             inputMode="numeric"
             autoComplete="off"
-            placeholder={chips.length ? 'Add another' : 'Type a number, press Enter'}
+            placeholder={chips.length ? 'Add another' : 'Like 12, or 10-14'}
             aria-describedby="numbers-help"
             onChange={(e) => {
               setTyping(e.target.value)
               setError('')
             }}
             onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ' || e.key === ',') && typing.trim()) {
+              // Not space: "10 - 14" must reach the parser whole. Spaces still separate numbers there.
+              if ((e.key === 'Enter' || e.key === ',') && typing.trim()) {
                 e.preventDefault()
                 commit()
-              } else if (e.key === 'Backspace' && !typing && chips.length) setChips((x) => x.slice(0, -1))
+              } else if (e.key === 'Backspace' && !typing && runs.length) {
+                const last = runs.at(-1)! // the chip shown last, the same as clicking its ×
+                setChips((x) => x.filter((n) => !last.includes(n)))
+              }
             }}
             onBlur={() => typing.trim() && commit()}
-            className="h-7 min-w-32 flex-1 bg-transparent px-1 text-[15px] font-medium tabular-nums focus:outline-none focus-visible:outline-none"
+            className="h-7 min-w-32 flex-1 bg-transparent px-1 text-base font-medium tabular-nums focus:outline-none focus-visible:outline-none"
           />
         </div>
         <p id="numbers-help" aria-live="polite" className={`text-sm ${problem ? 'font-semibold text-bad-text' : 'text-muted'}`}>
@@ -183,7 +194,7 @@ export default function GiveTickets({
                 {n === 1 ? 'Ticket' : `${n} tickets:`} <strong className="text-ink">{list(parsed.numbers)}</strong>
               </>
             ) : (
-              'Type each ticket number and press Enter. A dash adds a run, like 10-14.'
+              'Separate numbers with a space or comma. Use a dash for a run, like 10-14.'
             ))}
         </p>
       </div>

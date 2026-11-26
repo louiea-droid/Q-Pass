@@ -4,24 +4,10 @@ import { requireStaff } from '@/lib/guard'
 import { parseGuestCsv, planImport } from '@/lib/csv'
 import { planGive } from '@/lib/groups'
 import { normalizeTicket } from '@/lib/qr'
-import { checkIn, createEvent, deleteEvent, getEvent, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
-import type { EventInfo, ScanOutcome, Staff } from '@/lib/types'
+import { checkIn, createEvent, deleteEvent, getEvent, giveTicket, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
+import type { EventInfo, ScanOutcome } from '@/lib/types'
 
-// A scan saved offline is sent later, maybe after someone else signed in on that phone; `by` keeps the original
-// scanner's name. Names are typed at sign-in and never verified, so this trusts nothing new; the role stays the session's.
-const asScanner = (staff: Staff, by?: string) => ({ ...staff, name: by?.trim().slice(0, 60) || staff.name })
-
-export async function scanAction(event: string, payload: string, by?: string): Promise<ScanOutcome> {
-  const staff = asScanner(await requireStaff('scanner'), by)
-  return checkIn({ payload, event, staff, method: 'QR' })
-}
-
-export async function manualScanAction(event: string, ticketInput: string, by?: string): Promise<ScanOutcome> {
-  const staff = asScanner(await requireStaff('scanner'), by)
-  const ticket = normalizeTicket(ticketInput)
-  if (!ticket) return { result: 'not_found', message: 'Type a ticket number, like 0057' }
-  return checkIn({ payload: null, event, ticket, staff, method: 'manual' })
-}
+// Door scans go through /api/scan (a plain request the phone can cancel), not a server action.
 
 export type ActionResult = { error?: string }
 
@@ -100,8 +86,15 @@ export async function giveTicketsAction(
     if (plan.missing.length) return { error: `This event has no ticket ${plan.missing.join(', ')}.` }
     if (plan.taken.length)
       return { error: `Already given: ${plan.taken.map((t) => `${t.ticket} (${t.name})`).join(', ')}. Pick other numbers.` }
-    await Promise.all(plan.tickets.map((t) => updateTicket(event, t, { name: who, ...(info.trim() && { info: info.trim() }) })))
-    return { given: plan.tickets }
+    const ok = await Promise.all(plan.tickets.map((t) => giveTicket(event, t, who, info.trim())))
+    const given = plan.tickets.filter((_, i) => ok[i])
+    const lost = plan.tickets.filter((_, i) => !ok[i])
+    if (lost.length)
+      return {
+        given, // these did go through; the table shows them
+        error: `Someone else just gave ticket ${lost.join(', ')}.${given.length ? ` ${given.join(', ')} went to ${who}.` : ''} Reload the page to see who has it.`,
+      }
+    return { given }
   } catch (e) {
     return { error: (e as Error).message || 'Something went wrong. Try again.' }
   }
@@ -119,7 +112,7 @@ export async function importGuestsAction(
     if (rows.length > 5000) return { error: 'Import up to 5000 rows at a time.' }
     if (!rows.length) return { error: 'No rows with a ticket number were found. The first column should be the ticket number.' }
     const { patches, unknown } = planImport((await listTickets(event)).map((t) => t.ticket), rows)
-    // ponytail: 10 updates at a time, about 1 s per 100 rows on Supabase (slower on Sheets). A bulk upsert is the upgrade if lists get big.
+    // ponytail: 10 updates at a time, about 1 s per 100 rows. A bulk upsert is the upgrade if lists get big.
     for (let i = 0; i < patches.length; i += 10)
       await Promise.all(patches.slice(i, i + 10).map((p) => updateTicket(event, p.ticket, p.patch)))
     return { updated: patches.length, unknown, badLines }

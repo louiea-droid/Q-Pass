@@ -1,5 +1,6 @@
 import 'server-only'
 import { decideCheckIn } from './checkin'
+import { groupKey } from './groups'
 import { isValidEventName, normalizeTicket, parsePayload, ticketRange } from './qr'
 import type { EventInfo, LogEntry, LogResult, ScanOutcome, Staff, Ticket } from './types'
 
@@ -108,11 +109,35 @@ export async function listTickets(event: string): Promise<Ticket[]> {
   }
 }
 
+/** An ilike pattern for a name, the way groupKey compares names: any case, any spacing between words. */
+const likeName = (name: string) => groupKey(name).replace(/[\\%_]/g, '\\$&').replace(/ /g, '%')
+
+/**
+ * The tickets carrying this name, for the family count at the door: a few rows instead of the whole event.
+ * `%` at the ends also catches names saved with stray spaces; the caller keeps exact matches (groupKey).
+ */
+export async function listByName(event: string, name: string): Promise<Ticket[]> {
+  const { data } = await sb<Row[]>(`tickets?select=*&event=eq.${q(event)}&name=ilike.${q(`%${likeName(name)}%`)}`)
+  return data.map(toTicket)
+}
+
 export async function updateTicket(event: string, ticket: string, patch: Partial<Pick<Ticket, 'name' | 'info' | 'notes'>>): Promise<void> {
   const { data } = await sb<Row[]>(`tickets?event=eq.${q(event)}&ticket=eq.${q(ticket)}`, {
     method: 'PATCH', body: patch, headers: { Prefer: 'return=representation' },
   })
   if (!data?.length) throw new Error('Ticket not found')
+}
+
+/**
+ * Puts `name` on a ticket only if it is still free or already that person's (any case), in one step, so two admins
+ * giving the same ticket at once can't both succeed. False when someone else got it first.
+ */
+export async function giveTicket(event: string, ticket: string, name: string, info: string): Promise<boolean> {
+  const freeFor = q(`(name.is.null,name.eq."",name.ilike."${likeName(name).replace(/[\\"]/g, '\\$&')}")`) // quoted for PostgREST
+  const { data } = await sb<Row[]>(`tickets?event=eq.${q(event)}&ticket=eq.${q(ticket)}&or=${freeFor}`, {
+    method: 'PATCH', body: { name, ...(info && { info }) }, headers: { Prefer: 'return=representation' },
+  })
+  return !!data?.length
 }
 
 async function log(event: string, ticket: string, result: LogResult, staff: Staff, method: 'QR' | 'manual') {
@@ -129,15 +154,15 @@ export async function checkIn(args: {
   staff: Staff
   method: 'QR' | 'manual'
 }): Promise<ScanOutcome> {
-  const event = await getEvent(args.event)
-  // Deleted (e.g. a scan saved offline before the event was removed): answer red instead of throwing, so it is not retried forever.
-  if (!event) return { result: 'event_closed', message: 'This event was deleted' }
+  // The event's status is checked inside check_in (one trip per scan); until then treat it as open.
+  const event: EventInfo = { name: args.event, status: 'open', date: '', venue: '', details: '', ticketFrom: '', ticketTo: '' }
   const parsed = args.method === 'QR' ? parsePayload(args.payload ?? '') : null
   const scannedEvent = args.method === 'manual' ? event.name : (parsed?.event ?? null)
   const ticketNo = args.method === 'manual' ? args.ticket : parsed?.ticket
-  const decide = (ticket: Ticket | undefined) =>
-    decideCheckIn({ scannedEvent, event, ticket, now: new Date().toISOString(), staffName: args.staff.name, method: args.method }).outcome
+  const decide = (ticket: Ticket | undefined, e = event) =>
+    decideCheckIn({ scannedEvent, event: e, ticket, now: new Date().toISOString(), staffName: args.staff.name, method: args.method }).outcome
 
+  // Not a ticket, or another event's: no database needed to say so.
   const early = decide(ticketNo ? ({ ticket: ticketNo } as Ticket) : undefined)
   if (early.result !== 'checked_in' && early.result !== 'already_checked_in') {
     await log(event.name, ticketNo ?? '', early.result, args.staff, args.method).catch((e) => console.error('Log write failed', e))
@@ -145,11 +170,14 @@ export async function checkIn(args: {
   }
 
   // Atomic in the database: two phones can't both check in the same ticket.
-  const { data: before } = await sb<Row | null>('rpc/check_in', {
+  const { data } = await sb<Row | null>('rpc/check_in', {
     method: 'POST',
     body: { p_event: event.name, p_ticket: ticketNo, p_staff_name: args.staff.name, p_staff_role: args.staff.role, p_method: args.method },
   })
-  return decide(before ? toTicket(before) : undefined)
+  // Deleted (e.g. a scan saved offline before the event was removed): answer red instead of throwing, so it is not retried forever.
+  if (data?.blocked === 'missing') return { result: 'event_closed', message: 'This event was deleted' }
+  if (data?.blocked === 'closed') return decide(undefined, { ...event, status: 'closed' })
+  return decide(data ? toTicket(data) : undefined)
 }
 
 export async function undoCheckIn(event: string, ticket: string, staff: Staff): Promise<void> {
