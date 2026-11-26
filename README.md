@@ -27,7 +27,7 @@ Staff also type their name, and that name is recorded with every check-in they m
 2. When it's ready, open **SQL Editor → New query**, paste everything from `supabase/schema.sql`, and click **Run**. It should say "Success".
 3. Open **Project Settings → API** (or **API Keys**). Copy the **Project URL** into `SUPABASE_URL`, and the **service_role** secret key into `SUPABASE_SERVICE_ROLE_KEY`.
 
-The service_role key can read and change everything. Keep it only in `.env.local` and in Netlify's settings, never in chats, screenshots or code.
+The service_role key can read and change everything. Keep it only in `.env.local` and in Vercel's settings, never in chats, screenshots or code.
 
 On the free plan Supabase pauses a project after a week with no use. Open the app a day or two before each event; if it's paused, click **Restore** in the Supabase dashboard.
 
@@ -64,13 +64,14 @@ Phones only allow the camera on secure (https) sites. To try it on your own netw
 3. Open `https://<this PC’s address>:3000/scan` on the phone. The PC’s address is in `next.config.ts` under `allowedDevOrigins`; add yours there if it’s different.
 4. The phone warns that the connection isn’t private. That’s expected for a test certificate: tap **Advanced → Proceed**.
 
-## Put it online (Netlify, free)
+## Put it online (Vercel, free)
 
 1. Push this folder to a GitHub repository (private is fine).
-2. On <https://app.netlify.com>, choose **Add new site → Import an existing project** and pick the repository. Netlify detects Next.js by itself.
-3. Under **Site configuration → Environment variables**, add the same values as in `.env.local`.
-4. Deploy. Then open the site, sign in as admin, and use **Share scanner** on the Check-in desk to get volunteers in.
-5. Netlify builds again by itself every time you push to GitHub.
+2. On <https://vercel.com>, choose **Add New → Project** and import the repository. Vercel detects Next.js by itself.
+3. Before deploying, open **Environment Variables** and add the same values as in `.env.local`. To change them later, go to **Settings → Environment Variables**, then redeploy.
+4. Under **Settings → Functions**, set the region to the one closest to your Supabase project (e.g. Singapore), so each scan is quick.
+5. Deploy. Then open the site, sign in as admin, and use **Share scanner** on the Check-in desk to get volunteers in.
+6. Vercel builds again by itself every time you push to GitHub.
 
 ## Handing out tickets
 

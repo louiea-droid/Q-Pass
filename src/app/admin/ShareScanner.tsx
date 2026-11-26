@@ -90,7 +90,7 @@ export default function ShareScanner({
 
         {localOnly && (
           <p className="mt-3 rounded-xl bg-note p-3 text-sm text-note-ink">
-            This link only opens on this computer. Put the site online (see README, Netlify) so volunteers’ phones can open it.
+            This link only opens on this computer. Put the site online (see README, Vercel) so volunteers’ phones can open it.
           </p>
         )}
 

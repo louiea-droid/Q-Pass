@@ -232,9 +232,10 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
         <>
         {/* On phones only Ticket and Name fit; say the rest is a swipe away. */}
         <p className="-mb-1 text-xs text-muted sm:hidden">Swipe the table sideways to see details and notes.</p>
-        <div className="relative max-h-[calc(100dvh-13rem)] overflow-auto rounded-xl border border-line">
+        {/* No inner scroll: the page scrolls. Phones still swipe sideways; on wide screens clip (not scroll) so the headings stick under the admin header. */}
+        <div className="relative overflow-x-auto rounded-xl border border-line lg:overflow-x-clip">
           <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 z-10 bg-soft text-[13px] whitespace-nowrap text-muted shadow-[0_1px_0_var(--line)]">
+            <thead className="sticky top-0 z-10 lg:top-[65px] bg-soft text-[13px] whitespace-nowrap text-muted shadow-[0_1px_0_var(--line)]">
               <tr>
                 <th scope="col" className="w-20 px-3 py-2.5 font-semibold">Ticket</th>
                 {COLS.map((c) => (
