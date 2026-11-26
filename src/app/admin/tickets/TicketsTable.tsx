@@ -243,6 +243,7 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                   </th>
                 ))}
                 <th scope="col" className="w-28 px-3 py-2.5 font-semibold">Status</th>
+                <th scope="col" className="w-24 px-3 py-2.5 font-semibold">Group</th>
                 <th scope="col" className="w-36 px-3 py-2.5 font-semibold">Checked in</th>
                 {!readOnly && (
                   <th scope="col" className="w-24 px-2 py-2.5">
@@ -309,17 +310,16 @@ export default function TicketsTable({ event, tickets, readOnly }: { event: stri
                           Not saved
                         </span>
                       ) : isGiven(t) ? (
-                        <span className="flex flex-wrap items-center gap-1.5">
-                          <span className="rounded-full bg-ok/10 px-2.5 py-0.5 text-[13px] font-bold text-ok-text">Given</span>
-                          {(groups.get(groupKey(t.name))?.total ?? 0) > 1 && (
-                            <span className="text-[13px] text-muted">group of {groups.get(groupKey(t.name))!.total}</span>
-                          )}
-                        </span>
+                        <span className="rounded-full bg-ok/10 px-2.5 py-0.5 text-[13px] font-bold text-ok-text">Given</span>
                       ) : (
                         <span className="rounded-full bg-soft px-2.5 py-0.5 text-[13px] font-semibold text-muted">Not given</span>
                       )}
                     </td>
-                    <td className="px-3 py-1.5 text-[13px] text-muted">
+                    {/* Tickets under the same name (a family). Blank for one ticket. */}
+                    <td className="px-3 py-1.5 text-[13px] whitespace-nowrap text-muted tabular-nums">
+                      {isGiven(t) && (groups.get(groupKey(t.name))?.total ?? 0) > 1 && `${groups.get(groupKey(t.name))!.total} tickets`}
+                    </td>
+                    <td className="px-3 py-1.5 text-[13px] whitespace-nowrap text-muted">
                       {t.checkedInAt ? `${fmt(t.checkedInAt)} by ${t.checkedInBy || 'someone'}` : 'Not yet'}
                     </td>
                     {!readOnly && (

@@ -19,11 +19,11 @@ const POLL_MS = 10_000
 
 const RESULT_TEXT: Record<LogResult, string> = {
   checked_in: '',
-  already_checked_in: 'already used',
-  not_found: 'not a valid ticket',
-  wrong_event: 'other event',
-  event_closed: 'event closed',
-  undone: 'check-in undone',
+  already_checked_in: 'Already used',
+  not_found: 'Not a ticket',
+  wrong_event: 'Other event',
+  event_closed: 'Event closed',
+  undone: 'Undone',
 }
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
@@ -83,7 +83,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
       <Arrivals stats={stats ?? initial} error={error} />
       <div className="flex flex-wrap items-start gap-5">
         <GuestList event={event} tickets={tickets} readOnly={readOnly} />
-        <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-5">
+        <div className="flex min-w-0 flex-[1_1_380px] flex-col gap-5">
           <section aria-labelledby="live" className="flex flex-col gap-2.5 rounded-2xl border border-line bg-surface p-4 sm:p-5">
             <div className="flex items-baseline justify-between gap-3">
               <h2 id="live" className="text-lg font-extrabold">
@@ -92,7 +92,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
               {stats && stats.recent.length > 0 && <span className="text-[13px] text-muted">Latest {Math.min(stats.recent.length, 12)} actions</span>}
             </div>
             {/* Fixed height, scrolls inside: new scans never push the cards below it down. */}
-            <div className="h-80 overflow-y-auto" tabIndex={0} role="region" aria-label="Latest actions">
+            <div className="thin-scroll -mr-2 h-80 overflow-y-auto pr-3" tabIndex={0} role="region" aria-label="Latest actions">
             {!stats ? (
               <p className="text-sm text-muted">Loading…</p>
             ) : stats.recent.length === 0 ? (
@@ -104,29 +104,28 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
                   const name = r.ticket ? names.get(r.ticket)?.trim() : ''
                   const label = r.ticket ? headline({ ticket: r.ticket, name }) : 'Unreadable code'
                   // Ticket number under a name, so the same guest scanned twice is easy to spot.
-                  const ref = [name && `Ticket ${r.ticket}`, r.method === 'manual' && 'typed in'].filter(Boolean).join(' · ')
+                  const ref = [name && `Ticket ${r.ticket}`, r.method === 'manual' && 'Typed in'].filter(Boolean).join(' · ')
                   return (
-                    <li key={`${r.time}-${i}`} className="flex items-center gap-3 border-b border-line py-2.5 last:border-0">
-                      <span className={`size-2.5 shrink-0 rounded-full ${ok ? 'bg-ok' : r.result === 'undone' ? 'bg-line-strong' : 'bg-bad'}`} aria-hidden="true" />
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <strong className="truncate text-[15px]">{label}</strong>
+                    // Two lines that line up across the row: name | time, then what happened | who did it.
+                    <li key={`${r.time}-${i}`} className="flex items-start gap-3 border-b border-line py-3 last:border-0">
+                      <span className={`mt-[7px] size-2.5 shrink-0 rounded-full ${ok ? 'bg-ok' : r.result === 'undone' ? 'bg-line-strong' : 'bg-bad'}`} aria-hidden="true" />
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <strong className="truncate text-[15px] leading-6">{label}</strong>
                         {(ref || !ok) && (
-                          <span className="text-[13px] text-muted">
+                          <span className="text-[13px] leading-5 text-muted">
                             {!ok && (
-                              <span className={`inline-block font-semibold first-letter:uppercase ${r.result === 'undone' ? '' : 'text-bad-text'}`}>
-                                {RESULT_TEXT[r.result]}
-                              </span>
+                              <span className={`font-semibold ${r.result === 'undone' ? 'text-ink' : 'text-bad-text'}`}>{RESULT_TEXT[r.result]}</span>
                             )}
                             {!ok && ref && ' · '}
                             {ref}
                           </span>
                         )}
                       </span>
-                      <span className="flex shrink-0 flex-col items-end text-[13px]">
-                        <time dateTime={r.time} className="font-semibold tabular-nums">
+                      <span className="flex shrink-0 flex-col items-end gap-0.5 text-[13px]">
+                        <time dateTime={r.time} className="leading-6 font-semibold tabular-nums">
                           {time(r.time)}
                         </time>
-                        <span className="max-w-28 truncate text-muted">by {r.staffName || 'Unknown'}</span>
+                        <span className="max-w-28 truncate leading-5 text-muted">by {r.staffName || 'Unknown'}</span>
                       </span>
                     </li>
                   )
