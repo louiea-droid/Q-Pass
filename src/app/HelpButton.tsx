@@ -44,7 +44,17 @@ const ADMIN: Topic[] = [
     q: 'Set up an event',
     steps: [
       'Go to Events, type the name, date, venue and ticket numbers, then tap “Create event”.',
+      'Ticket numbers can be any whole numbers, like 1 to 500 or 10000 to 12000. An event can have up to 10,000 tickets.',
       'Choose the name carefully. It’s printed inside every QR code, so it can’t be changed later.',
+    ],
+  },
+  {
+    q: 'Add or remove tickets',
+    steps: [
+      'Open the event on Events and tap “Edit”. Under Tickets, pick Add or Remove and type how many.',
+      'Tickets are added or removed at the end. For example, adding 50 to 0001–1000 adds 1001–1050.',
+      'Only tickets with no name and no check-in can be removed.',
+      'After adding, download the new tickets’ QR codes on QR codes. Type the range in the search, like 1001-1050.',
     ],
   },
   {

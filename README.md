@@ -51,6 +51,7 @@ npm run dev
 Open <http://localhost:3000>, sign in with your name and the admin passcode, then:
 
 1. Go to **Events** and create the event.
+   Ticket numbers can be any whole numbers (up to 9 digits), up to 10,000 tickets per event. Need more or fewer later? Open the event, click **Edit**, and add or remove tickets at the end. Only tickets with no name and no check-in can be removed.
 2. Click **QR codes**, then **Download all** (one zip file of PNG images, each named by its ticket number with the number printed under the code). Print a few and test-scan them.
 
 Phone cameras only work on `https://` sites, so test scanning on a phone after putting it online (or use your laptop's webcam on localhost).
