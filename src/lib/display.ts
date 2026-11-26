@@ -50,7 +50,7 @@ export function arrivalBuckets(times: string[], minutes = 15): { start: number; 
 
 /** Guests with a name on their ticket who never checked in, in ticket order. */
 export const noShows = <T extends { ticket: string; name: string; checkedInAt: string }>(tickets: T[]): T[] =>
-  tickets.filter((t) => isGiven(t) && !t.checkedInAt).sort((a, b) => a.ticket.localeCompare(b.ticket))
+  tickets.filter((t) => isGiven(t) && !t.checkedInAt).sort((a, b) => Number(a.ticket) - Number(b.ticket))
 
 /** Events offered in a "switch event" picker: open ones, plus the one on screen (it may be closed). */
 export const pickableEvents = (events: { name: string; status: string }[], current: string): string[] =>

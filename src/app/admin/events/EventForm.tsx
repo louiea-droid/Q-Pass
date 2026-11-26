@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useId, useRef, useState, useTransition } from 'react'
 import { createEventAction, deleteEventAction, updateEventAction } from '../../actions'
-import { isValidEventName, normalizeTicket } from '@/lib/qr'
+import { MAX_TICKETS, isValidEventName, normalizeTicket } from '@/lib/qr'
 import type { EventInfo } from '@/lib/types'
 import { toast } from '../../toast'
 
@@ -19,7 +19,7 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
   const router = useRouter()
   const [open, setOpen] = useState(startOpen)
   const [name, setName] = useState('')
-  const [range, setRange] = useState({ from: '0000', to: '1000' })
+  const [range, setRange] = useState({ from: '', to: '' })
   const [error, setError] = useState('')
   const [created, setCreated] = useState('')
   const [pending, start] = useTransition()
@@ -27,8 +27,14 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
   const nameProblem = name.trim() && !isValidEventName(name.trim()) ? 'Use only letters, numbers, spaces and dashes (up to 40).' : ''
   const from = normalizeTicket(range.from)
   const to = normalizeTicket(range.to)
-  const rangeProblem = !from || !to ? 'Use ticket numbers from 0000 to 9999.' : Number(from) > Number(to) ? 'The first ticket must come before the last.' : ''
-  const count = !rangeProblem ? Number(to) - Number(from) + 1 : 0
+  const count = from && to ? Number(to) - Number(from) + 1 : 0
+  const rangeEmpty = !range.from.trim() || !range.to.trim()
+  const rangeProblem =
+    rangeEmpty ? ''
+    : !from || !to ? 'Use whole numbers, up to 9 digits.'
+    : count < 1 ? 'The first ticket must come before the last.'
+    : count > MAX_TICKETS ? `That’s ${count.toLocaleString('en')} tickets. An event can have up to ${MAX_TICKETS.toLocaleString('en')}.`
+    : ''
 
   if (created && !open)
     return (
@@ -62,6 +68,7 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
         ev.preventDefault()
         if (!name.trim()) return setError('Type the event name first.')
         if (nameProblem || rangeProblem) return setError(nameProblem || rangeProblem)
+        if (rangeEmpty) return setError('Type the first and last ticket number.')
         const f = new FormData(ev.currentTarget)
         start(async () => {
           setError('')
@@ -72,7 +79,7 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
           if (r.error) return setError(r.error)
           setCreated(name.trim())
           setName('')
-          setRange({ from: '0000', to: '1000' })
+          setRange({ from: '', to: '' })
           setOpen(false)
           router.refresh()
         })
@@ -128,7 +135,10 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
             <input
               inputMode="numeric"
               value={range.from}
-              onChange={(e) => setRange({ ...range, from: e.target.value })}
+              onChange={(e) => {
+                setRange({ ...range, from: e.target.value })
+                setError('')
+              }}
               className={`${input.replace('w-full', 'w-28')} tabular-nums`}
             />
           </label>
@@ -137,16 +147,19 @@ export function NewEvent({ startOpen = false }: { startOpen?: boolean }) {
             <input
               inputMode="numeric"
               value={range.to}
-              onChange={(e) => setRange({ ...range, to: e.target.value })}
+              onChange={(e) => {
+                setRange({ ...range, to: e.target.value })
+                setError('')
+              }}
               className={`${input.replace('w-full', 'w-28')} tabular-nums`}
             />
           </label>
           <p aria-live="polite" className={`pb-2.5 text-sm ${rangeProblem ? 'font-semibold text-bad-text' : 'text-muted'}`}>
-            {rangeProblem || (
+            {rangeProblem || (rangeEmpty ? 'Type the first and last ticket number.' : (
               <>
                 That’s <strong className="text-ink">{count.toLocaleString('en')}</strong> tickets.
               </>
-            )}
+            ))}
           </p>
         </div>
       </fieldset>
@@ -200,12 +213,28 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
   const [pending, start] = useTransition()
   const open = event.status === 'open'
 
-  const save = (patch: Partial<Omit<EventInfo, 'name'>>, where: 'details' | 'status') =>
+  // Add or remove tickets at the end of the range.
+  const [mode, setMode] = useState<'add' | 'remove'>('add')
+  const [howMany, setHowMany] = useState('')
+  const count = /^\d{1,5}$/.test(howMany.trim()) ? Number(howMany) : 0
+  const pad = (n: number) => String(n).padStart(4, '0')
+  const last = Number(event.ticketTo)
+  // The tickets this change adds or removes, and the last ticket after it.
+  const [changeFrom, changeTo, newLast] = mode === 'add' ? [pad(last + 1), pad(last + count), pad(last + count)] : [pad(last - count + 1), event.ticketTo, pad(last - count)]
+
+  const save = (patch: Partial<Omit<EventInfo, 'name'>>, where: 'details' | 'status', change = 0) =>
     start(async () => {
       setError(null)
-      const r = await updateEventAction(event.name, patch).catch(() => ({ error: 'Couldn’t save. Try again.' }))
+      const r = await updateEventAction(event.name, patch, change).catch(() => ({ error: 'Couldn’t save. Try again.' }))
       if (r.error) return setError({ where, text: r.error })
-      toast(patch.status === 'closed' ? 'Event closed. Scanning is off.' : patch.status === 'open' ? 'Event reopened.' : 'Saved the event details.')
+      const n = Math.abs(change).toLocaleString('en')
+      toast(
+        patch.status === 'closed' ? 'Event closed. Scanning is off.'
+        : patch.status === 'open' ? 'Event reopened.'
+        : change > 0 ? `Added ${n} tickets (${changeFrom} to ${changeTo}). Get their QR codes on the QR codes page.`
+        : change < 0 ? `Removed ${n} tickets (${changeFrom} to ${changeTo}). Tickets now run ${event.ticketFrom} to ${newLast}.`
+        : 'Saved the event details.',
+      )
       document.getElementById(where === 'details' ? dialogId : menuId)?.hidePopover()
       router.refresh()
     })
@@ -371,6 +400,8 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
           if (e.newState !== 'open') return
           setOpened((n) => n + 1)
           setDirty(false)
+          setMode('add')
+          setHowMany('')
           setError(null)
         }}
         className="m-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-5 text-ink shadow-2xl backdrop:bg-black/50 overflow-y-auto"
@@ -380,7 +411,7 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
             <h2 id={`${dialogId}-title`} className="text-lg font-extrabold">
               Edit event details
             </h2>
-            <p className="text-sm text-muted">The name and ticket numbers can’t change.</p>
+            <p className="text-sm text-muted">The name can’t change. Tickets can be added or removed at the end.</p>
           </div>
           <button
             type="button"
@@ -401,7 +432,8 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
           onSubmit={(ev) => {
             ev.preventDefault()
             const f = new FormData(ev.currentTarget)
-            save({ date: String(f.get('date')), venue: String(f.get('venue')), details: String(f.get('details')) }, 'details')
+            if (howMany.trim() && !count) return setError({ where: 'details', text: `Type how many tickets to ${mode}, like 50.` })
+            save({ date: String(f.get('date')), venue: String(f.get('venue')), details: String(f.get('details')) }, 'details', mode === 'add' ? count : -count)
           }}
         >
           <label className={label}>
@@ -416,6 +448,62 @@ export function EditEvent({ event, tickets = 0, checkedIn = 0 }: { event: EventI
             Details
             <textarea name="details" rows={3} defaultValue={event.details} placeholder="Anything volunteers should know" className={`${input} h-auto resize-y py-2`} />
           </label>
+          <fieldset className="flex flex-col gap-1.5 sm:col-span-2">
+            <legend className="mb-1.5 text-sm font-semibold">
+              Tickets <span className="font-medium text-muted">(optional)</span>
+            </legend>
+            <div className="flex gap-2">
+              {/* Two-option switch (radios underneath): matches the theme, unlike a native dropdown's list. */}
+              <div role="radiogroup" aria-label="Add or remove" className="flex h-10 shrink-0 rounded-lg border border-line-strong bg-paper p-1">
+                {(['add', 'remove'] as const).map((m) => (
+                  <label
+                    key={m}
+                    className={`flex cursor-pointer items-center rounded-md px-3.5 text-sm font-semibold transition-colors duration-150 has-focus-visible:outline-2 has-focus-visible:outline-primary ${
+                      mode === m ? (m === 'add' ? 'bg-primary text-primary-ink' : 'bg-bad text-on-flag') : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="ticketMode"
+                      value={m}
+                      checked={mode === m}
+                      onChange={() => {
+                        setMode(m)
+                        setError(null)
+                      }}
+                      className="sr-only"
+                    />
+                    {m === 'add' ? 'Add' : 'Remove'}
+                  </label>
+                ))}
+              </div>
+              <input
+                aria-label={mode === 'add' ? 'How many tickets to add' : 'How many tickets to remove'}
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="How many"
+                value={howMany}
+                onChange={(e) => {
+                  setHowMany(e.target.value)
+                  setError(null)
+                }}
+                className={`${input.replace('w-full', 'w-36')} tabular-nums`}
+              />
+            </div>
+            <p aria-live="polite" className="text-xs text-muted">
+              {!count ? (
+                `Tickets now run ${event.ticketFrom} to ${event.ticketTo}.${mode === 'remove' ? ' Removing takes them off the end.' : ''}`
+              ) : mode === 'remove' && last - count < Number(event.ticketFrom) ? (
+                <span className="font-semibold text-bad-text">That’s every ticket. Keep at least one.</span>
+              ) : (
+                <>
+                  {mode === 'add' ? 'Adds' : 'Removes'} <strong className="text-ink">{changeFrom === changeTo ? changeFrom : `${changeFrom} to ${changeTo}`}</strong>. Tickets will
+                  run {event.ticketFrom} to {newLast}.
+                  {mode === 'remove' && ' Only tickets with no name and no check-in can go.'}
+                </>
+              )}
+            </p>
+          </fieldset>
           <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4 sm:col-span-2">
             {error?.where === 'details' && <p role="alert" className="mr-auto text-sm font-semibold text-bad-text">{error.text}</p>}
             <button type="button" popoverTarget={dialogId} popoverTargetAction="hide" className={secondary}>

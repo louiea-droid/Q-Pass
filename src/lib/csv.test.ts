@@ -54,7 +54,7 @@ test('import: CRLF, LF and blank lines all read the same', () => {
 })
 
 test('import: lines without a valid ticket number are reported by line number', () => {
-  expect(parseGuestCsv('Ticket,Name\nabc,Ana\n12345,Ben\n7,Cy').badLines).toEqual([2, 3])
+  expect(parseGuestCsv('Ticket,Name\nabc,Ana\n1234567890,Ben\n7,Cy').badLines).toEqual([2, 3])
 })
 
 test("import: a name that really starts with ' is kept", () => {

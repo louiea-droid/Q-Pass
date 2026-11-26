@@ -8,9 +8,16 @@ describe('normalizeTicket', () => {
     expect(normalizeTicket('0001')).toBe('0001')
     expect(normalizeTicket('1000')).toBe('1000')
   })
+  test('takes longer numbers, one way of writing each', () => {
+    expect(normalizeTicket('12345')).toBe('12345')
+    expect(normalizeTicket('012345')).toBe('12345')
+    expect(normalizeTicket('00057')).toBe('0057')
+    expect(normalizeTicket('999999999')).toBe('999999999')
+  })
   test('rejects non-digits, too long, empty', () => {
     expect(normalizeTicket('abc')).toBeNull()
-    expect(normalizeTicket('12345')).toBeNull()
+    expect(normalizeTicket('1234567890')).toBeNull()
+    expect(normalizeTicket('1.5')).toBeNull()
     expect(normalizeTicket('')).toBeNull()
   })
 })
@@ -26,6 +33,10 @@ describe('parsePayload', () => {
   })
   test('round-trips makePayload', () =>
     expect(parsePayload(makePayload('TAC Gala', '0007'))).toEqual({ event: 'TAC Gala', ticket: '0007' }))
+  test('reads 5+ digit tickets', () => {
+    expect(parsePayload('TAC Gala-12345')).toEqual({ event: 'TAC Gala', ticket: '12345' })
+    expect(parsePayload('TAC Gala-1234567890')).toBeNull()
+  })
 })
 
 describe('isValidEventName', () => {

@@ -1,4 +1,5 @@
 // A group (family) = the tickets in an event that carry the same name.
+import { MAX_TICKETS } from './qr'
 
 type T = { ticket: string; name: string; checkedInAt: string }
 
@@ -24,10 +25,11 @@ export function parseTicketList(text: string): { numbers: string[]; invalid: str
   const numbers: string[] = []
   const invalid: string[] = []
   for (const token of text.replace(/\s*([-–])\s*/g, '$1').split(/[\s,;]+/).filter(Boolean)) {
-    const run = /^(\d{1,4})[-–](\d{1,4})$/.exec(token)
-    const one = /^\d{1,4}$/.test(token)
+    const run = /^(\d{1,9})[-–](\d{1,9})$/.exec(token)
+    const one = /^\d{1,9}$/.test(token)
     if (one) numbers.push(pad(Number(token)))
-    else if (run && Number(run[1]) <= Number(run[2]))
+    // A run longer than any event (a typo like 1-100000000) would freeze the page.
+    else if (run && Number(run[1]) <= Number(run[2]) && Number(run[2]) - Number(run[1]) < MAX_TICKETS)
       for (let n = Number(run[1]); n <= Number(run[2]); n++) numbers.push(pad(n))
     else invalid.push(token)
   }

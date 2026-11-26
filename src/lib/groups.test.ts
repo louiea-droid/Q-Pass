@@ -33,6 +33,8 @@ test('ticket list: dashes make a run, including en dashes', () => {
 test('ticket list: repeats are kept once; junk and backwards runs are reported', () => {
   expect(parseTicketList('5, 5, abc, 9-7')).toEqual({ numbers: ['0005'], invalid: ['abc', '9-7'] })
   expect(parseTicketList('  ')).toEqual({ numbers: [], invalid: [] })
+  expect(parseTicketList('9999-10001')).toEqual({ numbers: ['9999', '10000', '10001'], invalid: [] })
+  expect(parseTicketList('1-100000000')).toEqual({ numbers: [], invalid: ['1-100000000'] })
 })
 
 const list = [t('0000'), t('0001', 'Ana'), t('0002'), t('0003')]

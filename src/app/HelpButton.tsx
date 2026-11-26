@@ -27,7 +27,7 @@ const SCANNING: Topic[] = [
     q: 'The code won’t scan',
     steps: [
       'Use the flashlight button if it’s dark, and flatten creased paper.',
-      'Still nothing? Tap “Type a ticket number” and type the 4-digit number printed on the ticket.',
+      'Still nothing? Tap “Type a ticket number” and type the number printed on the ticket.',
     ],
   },
   {

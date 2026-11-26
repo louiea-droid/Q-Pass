@@ -3,7 +3,7 @@ import { groupCounts, groupKey } from './groups'
 import * as db from './store-supabase'
 
 // All data lives in Supabase (store-supabase.ts). This file adds what the door needs on top of a check-in.
-export { ensureSchema, listEvents, getEvent, createEvent, updateEvent, deleteEvent, listTickets, updateTicket, giveTicket, undoCheckIn, getDashboard } from './store-supabase'
+export { ensureSchema, listEvents, getEvent, createEvent, addTickets, removeTickets, updateEvent, deleteEvent, listTickets, updateTicket, giveTicket, undoCheckIn, getDashboard } from './store-supabase'
 
 export const checkIn: typeof db.checkIn = async (args) => {
   const outcome = await db.checkIn(args)

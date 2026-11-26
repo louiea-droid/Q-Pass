@@ -14,7 +14,7 @@ create table if not exists events (
 
 create table if not exists tickets (
   event         text not null references events(name) on delete cascade,
-  ticket        text not null check (ticket ~ '^\d{4}$'),
+  ticket        text not null,
   name          text not null default '',
   info          text not null default '',
   notes         text not null default '',
@@ -23,6 +23,10 @@ create table if not exists tickets (
   method        text not null default '' check (method in ('', 'QR', 'manual')),
   primary key (event, ticket)
 );
+
+-- Ticket numbers: at least 4 digits (0057), up to 9, no extra leading zeros (12345, not 012345).
+alter table tickets drop constraint if exists tickets_ticket_check;
+alter table tickets add constraint tickets_ticket_check check (ticket ~ '^(\d{4}|[1-9]\d{4,8})$');
 
 create table if not exists log (
   id         bigint generated always as identity primary key,

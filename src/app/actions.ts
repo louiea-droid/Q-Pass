@@ -4,7 +4,7 @@ import { requireStaff } from '@/lib/guard'
 import { parseGuestCsv, planImport } from '@/lib/csv'
 import { planGive } from '@/lib/groups'
 import { normalizeTicket } from '@/lib/qr'
-import { checkIn, createEvent, deleteEvent, getEvent, giveTicket, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
+import { addTickets, removeTickets, checkIn, createEvent, deleteEvent, getEvent, giveTicket, listTickets, undoCheckIn, updateEvent, updateTicket } from '@/lib/store'
 import type { EventInfo, ScanOutcome } from '@/lib/types'
 
 // Door scans go through /api/scan (a plain request the phone can cancel), not a server action.
@@ -61,10 +61,17 @@ export async function createEventAction(e: EventInfo): Promise<ActionResult> {
   return attempt(() => createEvent({ ...e, name: e.name.trim(), status: 'open' }))
 }
 
-export async function updateEventAction(name: string, patch: Partial<Omit<EventInfo, 'name'>>): Promise<ActionResult> {
+/** `change` = tickets to add (+) or remove (−) at the end. The name and first ticket are locked. */
+export async function updateEventAction(name: string, patch: Partial<Omit<EventInfo, 'name'>>, change = 0): Promise<ActionResult & { lastTicket?: string }> {
   await requireStaff('admin')
-  const { date, venue, details, status } = patch // range and name are locked after creation
-  return attempt(() => updateEvent(name, { date, venue, details, status }))
+  const { date, venue, details, status } = patch
+  try {
+    const lastTicket = change > 0 ? await addTickets(name, change) : change < 0 ? await removeTickets(name, -change) : undefined
+    await updateEvent(name, { date, venue, details, status })
+    return { lastTicket }
+  } catch (e) {
+    return { error: (e as Error).message || 'Something went wrong. Try again.' }
+  }
 }
 
 /** Give the listed tickets (handed out at random) to one person or family. Refuses if any is someone else's. */

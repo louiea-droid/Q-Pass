@@ -427,7 +427,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                   Saved offline
                 </span>
                 <span className="text-2xl leading-tight font-extrabold wrap-anywhere">
-                  {/^\d{4}$/.test(savedOffline) ? `Ticket ${savedOffline}` : 'This ticket'}
+                  {savedOffline ? `Ticket ${savedOffline}` : 'This ticket'}
                 </span>
                 <span className="text-base leading-relaxed">
                   It will be checked when the internet is back. Let them in.
@@ -574,7 +574,7 @@ function ManualEntry({ disabled, onSubmit, onCancel }: { disabled: boolean; onSu
           autoFocus
           inputMode="numeric"
           autoComplete="off"
-          pattern="[0-9]{1,4}"
+          pattern="[0-9]{1,9}"
           placeholder="0057"
           value={value}
           onChange={(e) => setValue(e.target.value)}

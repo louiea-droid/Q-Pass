@@ -103,6 +103,37 @@ test('creating an event inserts the event and every ticket; listing reads past t
   expect(listed[1000].ticket).toBe('1000')
 })
 
+test('adding tickets continues after the last one: tickets first, then the range', async () => {
+  const { addTickets } = await import('./store-supabase')
+  expect(await addTickets('TAC Gala', 500)).toBe('1500')
+  expect(tickets.map((t) => t.ticket)).toEqual(Array.from({ length: 500 }, (_, i) => String(1001 + i)))
+  const post = reqs.findIndex((q) => q.path === 'tickets' && q.method === 'POST')
+  const patch = reqs.findIndex((q) => q.path === 'events' && q.method === 'PATCH')
+  expect(post).toBeLessThan(patch)
+  expect(reqs[post].headers.Prefer).toContain('ignore-duplicates')
+  expect(reqs[patch].body).toEqual({ ticket_to: '1500' })
+  await expect(addTickets('TAC Gala', 0)).rejects.toThrow('how many')
+  await expect(addTickets('TAC Gala', -5)).rejects.toThrow('how many')
+  await expect(addTickets('TAC Gala', 9500)).rejects.toThrow('up to 10,000')
+})
+
+test('removing tickets takes unused ones off the end, and refuses if any is given or checked in', async () => {
+  const { removeTickets } = await import('./store-supabase')
+  tickets = ['0996', '0997', '0998', '0999', '1000'].map((t) => row(t))
+  expect(await removeTickets('TAC Gala', 3)).toBe('0997')
+  const del = reqs.find((q) => q.path === 'tickets' && q.method === 'DELETE')!
+  expect(del.query.get('ticket')).toBe('in.(0998,0999,1000)')
+  expect(del.query.get('name')).toBe('eq.') // only still-unused rows
+  expect(del.query.get('checked_in_at')).toBe('is.null')
+  expect(reqs.find((q) => q.path === 'events' && q.method === 'PATCH')!.body).toEqual({ ticket_to: '0997' })
+
+  reqs = []
+  tickets = [row('0999', { name: 'Ana' }), row('1000', { checked_in_at: '2026-11-26T08:00:00Z' })]
+  await expect(removeTickets('TAC Gala', 2)).rejects.toThrow('0999, 1000 are given or checked in')
+  expect(reqs.some((q) => q.method === 'DELETE' || q.method === 'PATCH')).toBe(false)
+  await expect(removeTickets('TAC Gala', 1001)).rejects.toThrow('keep at least one')
+})
+
 test('duplicate event names get a friendly message', async () => {
   const { createEvent } = await import('./store-supabase')
   await expect(

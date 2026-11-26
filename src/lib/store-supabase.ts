@@ -1,7 +1,7 @@
 import 'server-only'
 import { decideCheckIn } from './checkin'
 import { groupKey } from './groups'
-import { isValidEventName, normalizeTicket, parsePayload, ticketRange } from './qr'
+import { MAX_TICKETS, isValidEventName, normalizeTicket, parsePayload, ticketRange } from './qr'
 import type { EventInfo, LogEntry, LogResult, ScanOutcome, Staff, Ticket } from './types'
 
 // Supabase (Postgres) store, talking to its REST API with the server-only service_role key.
@@ -66,7 +66,8 @@ export async function createEvent(e: EventInfo): Promise<void> {
   const name = e.name.trim()
   if (!isValidEventName(name)) throw new Error('Event name: letters, numbers, spaces and dashes only, up to 40 characters.')
   const from = normalizeTicket(e.ticketFrom), to = normalizeTicket(e.ticketTo)
-  if (!from || !to || Number(from) > Number(to)) throw new Error('Ticket range must be two numbers from 0000 to 9999, first ≤ last.')
+  if (!from || !to || Number(from) > Number(to)) throw new Error('Ticket range must be two whole numbers (up to 9 digits), first ≤ last.')
+  if (Number(to) - Number(from) + 1 > MAX_TICKETS) throw new Error(`An event can have up to ${MAX_TICKETS.toLocaleString('en')} tickets.`)
   try {
     await sb('events', {
       method: 'POST', headers: { Prefer: 'return=minimal' },
@@ -76,6 +77,49 @@ export async function createEvent(e: EventInfo): Promise<void> {
     throw (err as Error).message === 'Duplicate' ? new Error('An event with that name already exists.') : err
   }
   await sb('tickets', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: ticketRange(from, to).map((ticket) => ({ event: name, ticket })) })
+}
+
+/** Adds `count` tickets after the event's last one. Returns the new last ticket number. */
+export async function addTickets(name: string, count: number): Promise<string> {
+  const e = await getEvent(name)
+  if (!e) throw new Error('Event not found')
+  if (!Number.isInteger(count) || count < 1) throw new Error('Type how many tickets to add, like 50.')
+  const to = normalizeTicket(Number(e.ticketTo) + count)
+  if (!to) throw new Error('That goes past the biggest ticket number (9 digits).')
+  const total = Number(to) - Number(e.ticketFrom) + 1
+  if (total > MAX_TICKETS)
+    throw new Error(`An event can have up to ${MAX_TICKETS.toLocaleString('en')} tickets. This one has ${(total - count).toLocaleString('en')}.`)
+  const added = ticketRange(String(Number(e.ticketTo) + 1), to)
+  // Tickets first, then the range: if the second step fails, saving again just skips the tickets already there.
+  await sb('tickets', {
+    method: 'POST', headers: { Prefer: 'return=minimal,resolution=ignore-duplicates' },
+    body: added.map((ticket) => ({ event: name, ticket })),
+  })
+  await sb(`events?name=eq.${q(name)}`, { method: 'PATCH', body: { ticket_to: to }, headers: { Prefer: 'return=minimal' } })
+  return to
+}
+
+/** Removes the last `count` tickets, only if none of them has a name or a check-in. Returns the new last ticket number. */
+export async function removeTickets(name: string, count: number): Promise<string> {
+  const e = await getEvent(name)
+  if (!e) throw new Error('Event not found')
+  if (!Number.isInteger(count) || count < 1) throw new Error('Type how many tickets to remove, like 50.')
+  const to = Number(e.ticketTo) - count
+  if (to < Number(e.ticketFrom)) throw new Error(`This event has ${(Number(e.ticketTo) - Number(e.ticketFrom) + 1).toLocaleString('en')} tickets; keep at least one.`)
+  const gone = ticketRange(String(to + 1), e.ticketTo)
+  const goneSet = new Set(gone)
+  const used = (await listTickets(name)).filter((t) => goneSet.has(t.ticket) && (t.name.trim() || t.checkedInAt)).map((t) => t.ticket)
+  if (used.length)
+    throw new Error(
+      `Can’t remove: ${used.slice(0, 5).join(', ')}${used.length > 5 ? ` and ${used.length - 5} more` : ''} ${used.length === 1 ? 'is' : 'are'} given or checked in. Clear ${used.length === 1 ? 'it' : 'them'} first, or remove fewer.`,
+    )
+  // Only still-unused rows are deleted, so a ticket given out a moment ago survives.
+  // ponytail: that ticket then sits past the new last number (still scans, missing from the QR page); rare enough to leave.
+  for (let i = 0; i < gone.length; i += 200)
+    await sb(`tickets?event=eq.${q(name)}&ticket=in.(${gone.slice(i, i + 200).join(',')})&name=eq.&checked_in_at=is.null`, { method: 'DELETE' })
+  const last = String(to).padStart(4, '0')
+  await sb(`events?name=eq.${q(name)}`, { method: 'PATCH', body: { ticket_to: last }, headers: { Prefer: 'return=minimal' } })
+  return last
 }
 
 export async function updateEvent(name: string, patch: Partial<Omit<EventInfo, 'name'>>): Promise<void> {
@@ -105,7 +149,8 @@ export async function listTickets(event: string): Promise<Ticket[]> {
       headers: { 'Range-Unit': 'items', Range: `${from}-${from + 999}` },
     })
     out.push(...data.map(toTicket))
-    if (data.length < 1000) return out
+    // The database sorts as text ("10000" before "9999"), so put them in number order here.
+    if (data.length < 1000) return out.sort((a, b) => Number(a.ticket) - Number(b.ticket))
   }
 }
 
