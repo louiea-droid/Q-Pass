@@ -421,8 +421,24 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 Keep the video at its own shape, centred: the library reads the scan area as if the video were
                 never cropped, so object-cover or a forced height makes it miss codes in tall boxes. */}
             <div id="reader" className="flex size-full items-center justify-center [&_#qr-shaded-region]:hidden" />
-            {/* Same size as qrbox (80% of the shorter side), with the camera dimmed around it. Nothing else sits on
-                the camera (hint, flashlight), so nothing can overlap the frame whatever shape the box is. */}
+            {/* Flashlight: Android Chrome exposes it; iPhones don't, so the button stays hidden there. */}
+            {torch && (
+              <button
+                type="button"
+                onClick={toggleTorch}
+                aria-pressed={torchOn}
+                aria-label="Flashlight"
+                className={`absolute top-3 right-3 z-10 grid size-11 place-items-center rounded-full transition-colors duration-200 ${
+                  torchOn ? 'bg-accent text-accent-ink' : 'bg-black/45 text-white hover:bg-black/60'
+                }`}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M18 6c0 2-2 2-2 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10c0-2-2-2-2-4V2h12z" />
+                  <path d="M6 6h12M12 12v2" />
+                </svg>
+              </button>
+            )}
+            {/* Same size as qrbox (80% of the shorter side), with the camera dimmed around it. */}
             <div
               aria-hidden="true"
               className={`pointer-events-none absolute inset-0 m-auto size-[80cqmin] rounded-[26px] shadow-[0_0_0_100vmax_rgb(0_0_0/0.45)] transition-opacity duration-300 ${paused ? 'opacity-40' : ''}`}
@@ -490,23 +506,6 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
               />
             ) : (
               <div className="flex gap-2.5">
-                {/* Flashlight: Android Chrome only. Here rather than on the camera, so it never covers the frame. */}
-                {torch && (
-                  <button
-                    type="button"
-                    onClick={toggleTorch}
-                    aria-pressed={torchOn}
-                    aria-label="Flashlight"
-                    className={`grid size-10 shrink-0 place-items-center rounded-xl border transition-colors duration-200 ${
-                      torchOn ? 'border-accent bg-accent text-accent-ink' : 'border-line-strong bg-surface hover:bg-soft'
-                    }`}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M18 6c0 2-2 2-2 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10c0-2-2-2-2-4V2h12z" />
-                      <path d="M6 6h12M12 12v2" />
-                    </svg>
-                  </button>
-                )}
                 {paused ? (
                   <>
                     <KeypadButton iconOnly onClick={() => setTyping(true)} />
