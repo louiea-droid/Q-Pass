@@ -386,10 +386,11 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
           )}
 
           {/* Fills the space left over and keeps that size between scans: the scan box is measured once, when the camera starts. */}
-          {/* Once the video plays the box takes its shape (no black bars), shrinking further only if the screen is short. */}
+          {/* Shaped like the video (no black bars), shrinking only if the screen is short. Starts at 4:3, the usual
+              webcam shape, so the box doesn't jump when the camera comes on a second after the page loads. */}
           <div
-            className={`relative mx-4 min-h-40 overflow-hidden rounded-3xl lg:h-64 lg:flex-none bg-[#141518] [container-type:size] ${videoShape ? 'flex-initial' : 'flex-1'}`}
-            style={videoShape ? { aspectRatio: videoShape } : undefined}
+            className="relative mx-4 min-h-40 flex-initial overflow-hidden rounded-3xl bg-[#141518] [container-type:size] lg:h-64 lg:flex-none"
+            style={{ aspectRatio: videoShape ?? 4 / 3 }}
           >
             {/* The library's own shaded box is hidden; the frame below draws the same area in Q-Pass style.
                 Keep the video at its own shape, centred: the library reads the scan area as if the video were
