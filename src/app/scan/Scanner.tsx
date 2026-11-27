@@ -3,6 +3,7 @@
 import type { Html5Qrcode } from 'html5-qrcode'
 import Link from 'next/link'
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import InstallButton from '../InstallButton'
 import Select from '../Select'
 import SignOutButton from '../SignOutButton'
 import { headline } from '@/lib/display'
@@ -381,6 +382,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 Check-in desk
               </Link>
             )}
+            <InstallButton className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-left font-semibold hover:bg-soft" />
             <SignOutButton className="w-full rounded-xl px-3 py-3 text-left font-semibold hover:bg-soft" />
           </div>
         </details>

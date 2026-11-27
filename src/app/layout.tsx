@@ -16,7 +16,8 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         {/* Set the theme before the first paint: the saved choice, else the device setting. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')`,
+            // Theme first, then: keep Chrome's install offer for the "Install Q-Pass" button (InstallButton.tsx).
+            __html: `try{var t=localStorage.getItem('theme')}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__installPrompt=e;dispatchEvent(new Event('qpass-installable'))});addEventListener('appinstalled',function(){window.__installPrompt=null})`,
           }}
         />
       </head>
