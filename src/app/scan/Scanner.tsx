@@ -375,8 +375,10 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
 
           {/* Fills the space left over and keeps that size between scans: the scan box is measured once, when the camera starts. */}
           <div className="relative mx-4 min-h-44 flex-1 overflow-hidden rounded-3xl lg:h-64 lg:flex-none bg-[#141518] [container-type:size]">
-            {/* The library's own shaded box is hidden; the frame below draws the same area in Q-Pass style. */}
-            <div id="reader" className="size-full [&_#qr-shaded-region]:hidden [&_video]:size-full [&_video]:object-cover" />
+            {/* The library's own shaded box is hidden; the frame below draws the same area in Q-Pass style.
+                Keep the video at its own shape, centred: the library reads the scan area as if the video were
+                never cropped, so object-cover or a forced height makes it miss codes in tall boxes. */}
+            <div id="reader" className="flex size-full items-center justify-center [&_#qr-shaded-region]:hidden" />
             {torch && (
               <button
                 type="button"
