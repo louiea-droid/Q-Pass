@@ -284,9 +284,12 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
       .then(({ Html5Qrcode }) => {
         if (stopped) return
         qr = new Html5Qrcode('reader', { verbose: false })
+        // Ask the camera for a picture the shape of the box, so the video fills it edge to edge.
+        const box = document.getElementById('reader')
+        const aspectRatio = box?.clientHeight ? box.clientWidth / box.clientHeight : undefined
         return qr.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: (w, h) => ({ width: Math.min(w, h) * 0.7, height: Math.min(w, h) * 0.7 }) },
+          { fps: 10, aspectRatio, qrbox: (w, h) => ({ width: Math.min(w, h) * 0.8, height: Math.min(w, h) * 0.8 }) },
           (text) => {
             const l = lock.current
             if (l.busy || l.paused || (text === l.last && Date.now() - l.lastAt < SAME_CODE_MS)) return
@@ -407,12 +410,11 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             </p>
           )}
 
-          {/* Fills the space left over and keeps that size between scans: the scan box is measured once, when the camera starts. */}
-          {/* Shaped like the video (no black bars), shrinking only if the screen is short. Starts at 4:3, the usual
-              webcam shape, so the box doesn't jump when the camera comes on a second after the page loads. */}
+          {/* Fills the space left over; the camera is asked for a picture of this shape, so it fills the box.
+              A camera that ignores that request gets the box reshaped to its video instead (no black bars). */}
           <div
-            className="relative mx-4 min-h-40 flex-initial overflow-hidden rounded-3xl bg-[#141518] [container-type:size] lg:h-64 lg:flex-none"
-            style={{ aspectRatio: videoShape ?? 4 / 3 }}
+            className={`relative mx-4 min-h-40 overflow-hidden rounded-3xl bg-[#141518] [container-type:size] lg:h-64 lg:flex-none ${videoShape ? 'flex-initial' : 'flex-1'}`}
+            style={videoShape ? { aspectRatio: videoShape } : undefined}
           >
             {/* The library's own shaded box is hidden; the frame below draws the same area in Q-Pass style.
                 Keep the video at its own shape, centred: the library reads the scan area as if the video were
@@ -434,10 +436,10 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 </svg>
               </button>
             )}
-            {/* Same size as qrbox (70% of the shorter side), with the camera dimmed around it. */}
+            {/* Same size as qrbox (80% of the shorter side), with the camera dimmed around it. */}
             <div
               aria-hidden="true"
-              className={`pointer-events-none absolute inset-0 m-auto size-[70cqmin] rounded-[26px] shadow-[0_0_0_100vmax_rgb(0_0_0/0.45)] transition-opacity duration-300 ${paused ? 'opacity-40' : ''}`}
+              className={`pointer-events-none absolute inset-0 m-auto size-[80cqmin] rounded-[26px] shadow-[0_0_0_100vmax_rgb(0_0_0/0.45)] transition-opacity duration-300 ${paused ? 'opacity-40' : ''}`}
             >
               <svg className="absolute inset-0 size-full text-accent" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round">
                 <path vectorEffect="non-scaling-stroke" d="M1 22V11A10 10 0 0 1 11 1h11M78 1h11a10 10 0 0 1 10 10v11M99 78v11a10 10 0 0 1-10 10H78M22 99H11A10 10 0 0 1 1 89V78" />
