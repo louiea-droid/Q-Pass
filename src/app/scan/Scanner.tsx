@@ -282,9 +282,10 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
     }
     // Loaded in the browser only: the library touches `window` on import.
     import('html5-qrcode')
-      .then(({ Html5Qrcode }) => {
+      .then(({ Html5Qrcode, Html5QrcodeSupportedFormats }) => {
         if (stopped) return
-        qr = new Html5Qrcode('reader', { verbose: false })
+        // QR codes only: by default it tries ~17 barcode types on every frame, which made slow phones lag.
+        qr = new Html5Qrcode('reader', { verbose: false, formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE] })
         // Ask the camera for a picture the shape of the box, so the video fills it edge to edge.
         const box = document.getElementById('reader')
         const aspectRatio = box?.clientHeight ? box.clientWidth / box.clientHeight : undefined
@@ -448,7 +449,13 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
               <svg className="absolute inset-0 size-full text-accent" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round">
                 <path vectorEffect="non-scaling-stroke" d="M1 22V11A10 10 0 0 1 11 1h11M78 1h11a10 10 0 0 1 10 10v11M99 78v11a10 10 0 0 1-10 10H78M22 99H11A10 10 0 0 1 1 89V78" />
               </svg>
-              {!paused && <span className="absolute inset-x-[10%] top-1/2 h-0.5 animate-scan rounded-full bg-accent shadow-[0_0_12px_2px] shadow-accent/60" />}
+              {/* The wrapper is as tall as the line's travel (8% to 92%) and slides by its own height: a pure
+                  transform, so the sweep runs on the GPU without a layout every frame. */}
+              {!paused && (
+                <span className="absolute inset-x-[10%] top-[8%] h-[84%] animate-scan">
+                  <span className="block h-0.5 rounded-full bg-accent shadow-[0_0_12px_2px] shadow-accent/60" />
+                </span>
+              )}
             </div>
           </div>
 

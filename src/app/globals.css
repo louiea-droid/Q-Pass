@@ -54,9 +54,11 @@
     to { top: 102%; opacity: 0; }
   }
   --animate-scan: scan 2.2s ease-in-out infinite alternate;
+  /* The scanner's line (Scanner.tsx): its wrapper slides by its own height. A % transform stays on the GPU;
+     `top` or container units here forced a layout on every frame. */
   @keyframes scan {
-    from { top: 8%; }
-    to { top: 92%; }
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
   }
   --color-paper: var(--paper);
   --color-surface: var(--surface);
