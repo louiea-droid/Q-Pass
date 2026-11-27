@@ -108,6 +108,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
   const [torchOn, setTorchOn] = useState(false)
   const [savedOffline, setSavedOffline] = useState<string | null>(null) // ticket label of the last scan saved offline
   const [pending, setPending] = useState(0)
+  const [videoShape, setVideoShape] = useState<number | null>(null) // camera width ÷ height, once the video is playing
   useWakeLock(!!event)
 
   // Send scans saved offline: on load, when the phone comes back online, and every 15 s while any are waiting.
@@ -252,6 +253,10 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
     if (!event) return
     let qr: Html5Qrcode | undefined
     let stopped = false
+    let video: HTMLVideoElement | null = null
+    const fitVideo = () => {
+      if (video?.videoWidth && video.videoHeight) setVideoShape(video.videoWidth / video.videoHeight)
+    }
     // Loaded in the browser only: the library touches `window` on import.
     import('html5-qrcode')
       .then(({ Html5Qrcode }) => {
@@ -281,12 +286,19 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
           const t = qr?.getRunningTrackCameraCapabilities().torchFeature()
           if (t?.isSupported()) setTorch(t)
         } catch {}
+        // Shape the camera box like the video, so a landscape webcam in a tall box shows no black bars.
+        // `resize` also fires when the phone is turned and the camera switches orientation.
+        video = document.querySelector<HTMLVideoElement>('#reader video')
+        video?.addEventListener('resize', fitVideo)
+        fitVideo()
       })
       .catch(() => {
         if (!stopped) setCameraError('Camera is blocked or unavailable. Allow camera access for this site, or type ticket numbers below.')
       })
     return () => {
       stopped = true
+      video?.removeEventListener('resize', fitVideo)
+      setVideoShape(null)
       setTorch(null)
       setTorchOn(false)
       if (qr?.isScanning) qr.stop().then(() => qr?.clear()).catch(() => {})
@@ -374,7 +386,11 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
           )}
 
           {/* Fills the space left over and keeps that size between scans: the scan box is measured once, when the camera starts. */}
-          <div className="relative mx-4 min-h-44 flex-1 overflow-hidden rounded-3xl lg:h-64 lg:flex-none bg-[#141518] [container-type:size]">
+          {/* Once the video plays the box takes its shape (no black bars), shrinking further only if the screen is short. */}
+          <div
+            className={`relative mx-4 min-h-40 overflow-hidden rounded-3xl lg:h-64 lg:flex-none bg-[#141518] [container-type:size] ${videoShape ? 'flex-initial' : 'flex-1'}`}
+            style={videoShape ? { aspectRatio: videoShape } : undefined}
+          >
             {/* The library's own shaded box is hidden; the frame below draws the same area in Q-Pass style.
                 Keep the video at its own shape, centred: the library reads the scan area as if the video were
                 never cropped, so object-cover or a forced height makes it miss codes in tall boxes. */}
@@ -419,7 +435,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
           )}
 
           {/* Fixed height, blank until the first scan, so a result never resizes the camera above it. Cards scroll inside if ever too long. */}
-          <div aria-live="polite" className="mx-4 mt-3 mb-3 h-40 shrink-0 *:h-full *:overflow-y-auto">
+          <div aria-live="polite" className="mx-4 mt-3 mb-3 h-44 shrink-0 *:h-full *:overflow-y-auto">
             {busy && <p className="grid place-items-center rounded-2xl bg-surface text-lg font-semibold">Checking…</p>}
             {!busy && error && (
               <p role="alert" className="rounded-2xl bg-bad p-3 text-base font-semibold text-on-flag">
@@ -430,16 +446,16 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             {!busy && savedOffline !== null && (
               // Amber, not green: nobody has checked this ticket yet.
               <section className="flex flex-col gap-0.5 rounded-2xl bg-note p-3 text-note-ink">
-                <span className="flex items-center gap-2 text-base font-bold">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <span className="flex items-center gap-2 text-lg font-bold">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 20 0M5 12.9a10 10 0 0 1 14 0M3 3l18 18" />
                   </svg>
                   Saved offline
                 </span>
-                <span className="text-xl leading-tight font-extrabold wrap-anywhere">
+                <span className="text-2xl leading-tight font-extrabold wrap-anywhere">
                   {savedOffline ? `Ticket ${savedOffline}` : 'This ticket'}
                 </span>
-                <span className="text-sm leading-snug">
+                <span className="text-[15px] leading-snug">
                   Let them in. It syncs when you’re back online.
                 </span>
               </section>
@@ -510,15 +526,15 @@ function Result({ outcome }: { outcome: ScanOutcome }) {
   if (outcome.result === 'checked_in')
     return (
       <section className="flex flex-col gap-0.5 rounded-2xl bg-ok p-3 text-on-flag">
-        <span className="flex items-center gap-2 text-base font-bold">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <span className="flex items-center gap-2 text-lg font-bold">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10" />
             <path d="m8 12 3 3 5-6" />
           </svg>
           Checked in
         </span>
         <span className="text-2xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
-        {outcome.name && <span className="text-sm text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
+        {outcome.name && <span className="text-[15px] text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
         {outcome.group && <GroupLine group={outcome.group} />}
       </section>
     )
@@ -531,19 +547,19 @@ function Result({ outcome }: { outcome: ScanOutcome }) {
       : outcome.message
   return (
     <section role="alert" className="flex flex-col gap-0.5 rounded-2xl bg-bad p-3 text-on-flag">
-      <span className="flex items-center gap-2 text-base font-bold">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <span className="flex items-center gap-2 text-lg font-bold">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10" />
           <path d="M12 7v6M12 17h.01" />
         </svg>
         {REJECT_TITLE[outcome.result] ?? 'Not checked in'}
       </span>
       {outcome.ticket ? (
-        <span className="text-xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
+        <span className="text-2xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
       ) : null}
-      {detail && <span className="text-sm leading-snug text-[#ffe1dd]">{detail}</span>}
+      {detail && <span className="text-[15px] leading-tight text-[#ffe1dd]">{detail}</span>}
       {outcome.group && <GroupLine group={outcome.group} />}
-      <span className="mt-auto text-[13px] leading-snug font-semibold">
+      <span className="mt-auto text-sm leading-snug font-semibold">
         Check ID or call an admin.
       </span>
     </section>
@@ -553,8 +569,8 @@ function Result({ outcome }: { outcome: ScanOutcome }) {
 /** "Group: 2 of 5 here": the rest of the family is still to come. */
 function GroupLine({ group }: { group: { total: number; here: number } }) {
   return (
-    <span className="mt-0.5 flex w-fit items-center gap-1.5 rounded-lg bg-white/15 px-2 text-sm font-semibold">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <span className="mt-0.5 flex w-fit items-center gap-1.5 rounded-lg bg-white/15 px-2 py-0.5 text-[15px] font-semibold">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
