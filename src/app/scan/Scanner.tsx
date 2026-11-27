@@ -334,10 +334,11 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
 
   return (
     // While scanning the screen is exactly one viewport tall: the camera takes what's left, so nothing scrolls.
+    // On computers the card fits under the admin header (about 4rem) and its 1.5rem margins: 7.5rem in all.
     <div
       onPointerDown={unlockAudio}
-      className={`mx-auto flex w-full max-w-md flex-col lg:my-8 lg:rounded-3xl lg:border lg:border-line lg:shadow-[0_24px_60px_-24px_rgb(0_0_0/0.35)] ${
-        event ? 'h-dvh lg:h-auto lg:min-h-[min(46rem,calc(100dvh-9rem))]' : 'min-h-dvh lg:min-h-[min(46rem,calc(100dvh-9rem))]'
+      className={`mx-auto flex w-full max-w-md flex-col lg:my-6 lg:rounded-3xl lg:border lg:border-line lg:shadow-[0_24px_60px_-24px_rgb(0_0_0/0.35)] ${
+        event ? 'h-dvh lg:h-[min(46rem,calc(100dvh-7.5rem))]' : 'min-h-dvh lg:min-h-[min(46rem,calc(100dvh-7.5rem))]'
       }`}
     >
       <header className="flex items-center gap-2.5 border-b border-line bg-surface px-4 pt-4 pb-3 lg:rounded-t-3xl">
@@ -413,7 +414,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
           {/* Fills the space left over; the camera is asked for a picture of this shape, so it fills the box.
               A camera that ignores that request gets the box reshaped to its video instead (no black bars). */}
           <div
-            className={`relative mx-4 min-h-40 overflow-hidden rounded-3xl bg-[#141518] [container-type:size] lg:h-64 lg:flex-none ${videoShape ? 'flex-initial' : 'flex-1'}`}
+            className={`relative mx-4 min-h-40 overflow-hidden rounded-3xl bg-[#141518] [container-type:size] lg:min-h-28 ${videoShape ? 'flex-initial' : 'flex-1'}`}
             style={videoShape ? { aspectRatio: videoShape } : undefined}
           >
             {/* The library's own shaded box is hidden; the frame below draws the same area in Q-Pass style.
