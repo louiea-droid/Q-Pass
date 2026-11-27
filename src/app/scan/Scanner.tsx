@@ -459,7 +459,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 <KeypadButton iconOnly onClick={() => setTyping(true)} />
                 <button
                   onClick={resume}
-                  className="h-11 flex-1 rounded-xl bg-primary text-[15px] font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover sm:h-14 sm:rounded-2xl sm:text-[17px]"
+                  className="h-10 flex-1 rounded-xl bg-primary text-sm font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover"
                 >
                   Next person
                 </button>
@@ -486,9 +486,9 @@ function KeypadButton({ onClick, iconOnly = false }: { onClick: () => void; icon
     <button
       onClick={onClick}
       aria-label={iconOnly ? 'Type a ticket number' : undefined}
-      className={`flex h-11 items-center justify-center gap-2 rounded-xl border-[1.5px] border-primary bg-surface text-[15px] font-bold text-primary transition-colors duration-200 hover:bg-soft sm:h-14 sm:gap-2.5 sm:rounded-2xl sm:text-[17px] ${iconOnly ? 'w-11 shrink-0 sm:w-14' : 'w-full'}`}
+      className={`flex h-10 items-center justify-center gap-2 rounded-xl border border-primary bg-surface text-sm font-bold text-primary transition-colors duration-200 hover:bg-soft ${iconOnly ? 'w-10 shrink-0' : 'w-full'}`}
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <rect x="4" y="2" width="16" height="20" rx="2" />
         <path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h8" />
       </svg>
@@ -563,35 +563,38 @@ function GroupLine({ group }: { group: { total: number; here: number } }) {
 
 function ManualEntry({ disabled, onSubmit, onCancel }: { disabled: boolean; onSubmit: (t: string) => void; onCancel: () => void }) {
   const [value, setValue] = useState('')
+  // One row, the same height as the button it replaces, so the camera doesn't shrink while typing.
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault()
-        if (value.trim()) onSubmit(value)
+        if (value) onSubmit(value)
       }}
-      className="flex flex-col gap-2"
+      onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+      className="flex gap-2"
     >
-      <label htmlFor="manual" className="font-bold">
+      <label htmlFor="manual" className="sr-only">
         Ticket number
       </label>
-      <div className="flex gap-2">
-        <input
-          id="manual"
-          autoFocus
-          inputMode="numeric"
-          autoComplete="off"
-          pattern="[0-9]{1,9}"
-          placeholder="0057"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="h-14 min-w-0 flex-1 rounded-xl border-[1.5px] border-line-strong bg-surface px-4 text-xl font-semibold tabular-nums"
-        />
-        <button disabled={disabled} className="h-14 rounded-2xl bg-primary px-5 font-bold text-primary-ink hover:bg-primary-hover disabled:opacity-60">
-          Check in
-        </button>
-      </div>
-      <button type="button" onClick={onCancel} className="h-11 rounded-xl font-semibold text-muted hover:bg-soft">
-        Back to camera
+      <input
+        id="manual"
+        autoFocus
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={9}
+        placeholder="Ticket number"
+        value={value}
+        // Digits only: "#57", "No. 57" or a stray space still work.
+        onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))}
+        className="h-10 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3 text-base font-semibold tabular-nums placeholder:font-normal placeholder:text-muted"
+      />
+      <button disabled={disabled || !value} className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-primary-ink hover:bg-primary-hover disabled:opacity-50">
+        Check in
+      </button>
+      <button type="button" onClick={onCancel} aria-label="Back to camera" className="grid size-10 shrink-0 place-items-center rounded-xl text-muted hover:bg-soft">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
       </button>
     </form>
   )
