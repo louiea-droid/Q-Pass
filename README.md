@@ -76,7 +76,7 @@ Phones only allow the camera on secure (https) sites. To try it on your own netw
 
 ## Handing out tickets
 
-For a family or group, click **Give tickets**, type one name, then type the ticket numbers you handed over, separated by a space or comma (`10-14` adds a run). It won't overwrite tickets already given to someone else. To take tickets back, click **Remove** on their rows. Tickets with the same name count as one group, and the scanner shows how many of the group are already in (for example "2 of 5 in this group are here").
+For a family or group, click **Give tickets**, type one name, then type the ticket numbers you handed over, separated by a space or comma (`10-14` adds a run). It won't overwrite tickets already given to someone else. To take tickets back, click **Remove** on their rows. Tickets with the same name count as one group, and the scanner shows how many of the group are already in (for example "Group: 2 of 5 here").
 
 For single tickets, open **Tickets**, find the ticket number you are handing over, and type the person's name (plus any details). A ticket with a name counts as **given**; clear the name to make it not given again. Press **Enter** to jump to the next ticket's name. Changes save on their own. Names are optional: a ticket with no name still works at the door.
 

@@ -405,7 +405,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             </div>
             <p className="absolute inset-x-0 bottom-3 flex justify-center">
               <span className="rounded-full bg-black/55 px-3 py-1 text-sm font-medium text-white">
-                {paused ? 'Paused. Tap “Next person” to scan again' : 'Hold the QR code inside the frame'}
+                {paused ? 'Paused. Tap Next person' : 'Point at the QR code'}
               </span>
             </p>
           </div>
@@ -419,7 +419,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
           {/* Fixed height, so a result never resizes the camera above it. Cards scroll inside if ever too long. */}
           <div aria-live="polite" className="mx-4 mt-3 mb-3 h-40 shrink-0 *:h-full *:overflow-y-auto">
             {!busy && !error && !outcome && savedOffline === null && (
-              <p className="grid place-items-center rounded-2xl border border-dashed border-line-strong text-sm text-muted">The result of each scan shows here.</p>
+              <p className="grid place-items-center rounded-2xl border border-dashed border-line-strong text-sm text-muted">Results show here.</p>
             )}
             {busy && <p className="grid place-items-center rounded-2xl bg-surface text-lg font-semibold">Checking…</p>}
             {!busy && error && (
@@ -441,7 +441,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                   {savedOffline ? `Ticket ${savedOffline}` : 'This ticket'}
                 </span>
                 <span className="text-sm leading-snug">
-                  It will be checked when the internet is back. Let them in.
+                  Let them in. It syncs when you’re back online.
                 </span>
               </section>
             )}
@@ -501,10 +501,10 @@ function KeypadButton({ onClick, iconOnly = false }: { onClick: () => void; icon
 }
 
 const REJECT_TITLE: Record<string, string> = {
-  already_checked_in: 'Already used. Don’t let in yet',
-  wrong_event: 'Ticket for a different event',
-  event_closed: 'This event is closed',
-  not_found: 'Not a valid ticket',
+  already_checked_in: 'Already scanned',
+  wrong_event: 'Wrong event',
+  event_closed: 'Event closed',
+  not_found: 'Not valid',
 }
 
 function Result({ outcome }: { outcome: ScanOutcome }) {
@@ -516,7 +516,7 @@ function Result({ outcome }: { outcome: ScanOutcome }) {
             <circle cx="12" cy="12" r="10" />
             <path d="m8 12 3 3 5-6" />
           </svg>
-          Welcome! Checked in
+          Checked in
         </span>
         <span className="text-2xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
         {outcome.name && <span className="text-sm text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
@@ -539,18 +539,18 @@ function Result({ outcome }: { outcome: ScanOutcome }) {
       ) : null}
       <span className="text-sm leading-snug text-[#ffe1dd]">
         {used
-          ? `${outcome.name ? `Ticket ${outcome.ticket} was` : 'It was'} checked in at ${fmtTime(outcome.checkedInAt)} by ${outcome.checkedInBy || 'someone'}.`
+          ? `${outcome.name ? `Ticket ${outcome.ticket} · ` : ''}Scanned ${fmtTime(outcome.checkedInAt)} by ${outcome.checkedInBy || 'someone'}`
           : outcome.message}
       </span>
       {outcome.group && <GroupLine group={outcome.group} />}
       <span className="mt-auto text-[13px] leading-snug font-semibold">
-        Ask for an ID, or call an admin if this looks wrong.
+        Check ID or call an admin.
       </span>
     </section>
   )
 }
 
-/** "2 of 5 in this group are here": the rest of the family is still to come. */
+/** "Group: 2 of 5 here": the rest of the family is still to come. */
 function GroupLine({ group }: { group: { total: number; here: number } }) {
   return (
     <span className="mt-0.5 flex w-fit items-center gap-1.5 rounded-lg bg-white/15 px-2 text-sm font-semibold">
@@ -559,7 +559,7 @@ function GroupLine({ group }: { group: { total: number; here: number } }) {
         <circle cx="9" cy="7" r="4" />
         <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
-      {group.here} of {group.total} in this group are here
+      Group: {group.here} of {group.total} here
     </span>
   )
 }
