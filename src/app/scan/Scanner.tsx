@@ -524,6 +524,11 @@ function Result({ outcome }: { outcome: ScanOutcome }) {
     )
 
   const used = outcome.result === 'already_checked_in'
+  const detail = used
+    ? `${outcome.name ? `Ticket ${outcome.ticket} · ` : ''}Scanned ${fmtTime(outcome.checkedInAt)} by ${outcome.checkedInBy || 'someone'}`
+    : outcome.message === 'This event is closed' // the title already says "Event closed"
+      ? ''
+      : outcome.message
   return (
     <section role="alert" className="flex flex-col gap-0.5 rounded-2xl bg-bad p-3 text-on-flag">
       <span className="flex items-center gap-2 text-base font-bold">
@@ -536,11 +541,7 @@ function Result({ outcome }: { outcome: ScanOutcome }) {
       {outcome.ticket ? (
         <span className="text-xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
       ) : null}
-      <span className="text-sm leading-snug text-[#ffe1dd]">
-        {used
-          ? `${outcome.name ? `Ticket ${outcome.ticket} · ` : ''}Scanned ${fmtTime(outcome.checkedInAt)} by ${outcome.checkedInBy || 'someone'}`
-          : outcome.message}
-      </span>
+      {detail && <span className="text-sm leading-snug text-[#ffe1dd]">{detail}</span>}
       {outcome.group && <GroupLine group={outcome.group} />}
       <span className="mt-auto text-[13px] leading-snug font-semibold">
         Check ID or call an admin.
