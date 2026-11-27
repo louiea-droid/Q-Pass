@@ -43,3 +43,5 @@ next-env.d.ts
 .superpowers/
 
 certificates
+# browser test screenshots and scripts (Playwright)
+.playwright-mcp/
