@@ -11,7 +11,7 @@ const SCANNING: Topic[] = [
       'Pick the event from the list at the top. The phone remembers it next time.',
       'Point at the QR code. It scans by itself.',
       'Green “Checked in” means let them in.',
-      'Red means stop. Read the reason, then tap “Next person” to keep scanning.',
+      'Red means stop. Read the reason. Scanning starts again by itself after 5 seconds, or tap “Next person”.',
     ],
   },
   {

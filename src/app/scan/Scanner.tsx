@@ -19,6 +19,7 @@ type Torch = ReturnType<ReturnType<Html5Qrcode['getRunningTrackCameraCapabilitie
 const EVENT_KEY = 'tac-scan-event'
 const COOLDOWN_MS = 2000
 const SAME_CODE_MS = 5000
+const AUTO_NEXT_S = 5 // seconds a red result stays up before scanning continues by itself
 const COUNT_POLL_MS = 15_000
 
 const fmtTime = (iso?: string) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '')
@@ -109,7 +110,25 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
   const [savedOffline, setSavedOffline] = useState<string | null>(null) // ticket label of the last scan saved offline
   const [pending, setPending] = useState(0)
   const [videoShape, setVideoShape] = useState<number | null>(null) // camera width ÷ height, once the video is playing
+  const [autoNextIn, setAutoNextIn] = useState(AUTO_NEXT_S)
   useWakeLock(!!event)
+
+  // A red result pauses the camera; after AUTO_NEXT_S it moves on by itself, as if "Next person" was tapped.
+  // Not while a ticket number is being typed.
+  useEffect(() => {
+    if (!paused || typing) return
+    const start = Date.now()
+    const id = setInterval(() => {
+      const left = AUTO_NEXT_S - Math.floor((Date.now() - start) / 1000)
+      if (left > 0) return setAutoNextIn(left)
+      clearInterval(id)
+      resume(true)
+    }, 250)
+    return () => {
+      clearInterval(id)
+      setAutoNextIn(AUTO_NEXT_S)
+    }
+  }, [paused, typing])
 
   // Send scans saved offline: on load, when the phone comes back online, and every 15 s while any are waiting.
   // ponytail: offline scans get the sync time, not the scan time (check_in uses now()), so the arrivals chart
@@ -157,9 +176,12 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
     } catch {}
   }
 
-  function resume() {
+  function resume(auto = false) {
     lock.current.paused = false
-    lock.current.last = '' // the same ticket may be scanned again on purpose
+    // Tapped: the same ticket may be scanned again on purpose. Timed out: that ticket may still be in front of the
+    // camera, so it is ignored for another SAME_CODE_MS instead of flashing the same warning every few seconds.
+    if (auto) lock.current.lastAt = Date.now()
+    else lock.current.last = ''
     setPaused(false)
     setOutcome(null)
     setSavedOffline(null)
@@ -424,7 +446,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             </div>
             <p className="absolute inset-x-0 bottom-3 flex justify-center">
               <span className="rounded-full bg-black/55 px-3 py-1 text-sm font-medium text-white">
-                {paused ? 'Paused. Tap Next person' : 'Point at the QR code'}
+                {paused ? (typing ? 'Paused' : `Next scan in ${autoNextIn}s`) : 'Point at the QR code'}
               </span>
             </p>
           </div>
@@ -477,10 +499,10 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
               <div className="flex gap-2.5">
                 <KeypadButton iconOnly onClick={() => setTyping(true)} />
                 <button
-                  onClick={resume}
+                  onClick={() => resume()}
                   className="h-10 flex-1 rounded-xl bg-primary text-sm font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover"
                 >
-                  Next person
+                  Next person <span className="font-semibold tabular-nums opacity-70">· {autoNextIn}s</span>
                 </button>
               </div>
             ) : (
