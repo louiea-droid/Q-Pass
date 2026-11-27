@@ -446,7 +446,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             )}
           </div>
 
-          <div className="sticky bottom-0 border-t border-line bg-surface p-4 lg:rounded-b-3xl">
+          <div className="sticky bottom-0 mt-auto border-t border-line bg-surface p-4 lg:rounded-b-3xl">
             {typing ? (
               <ManualEntry
                 disabled={busy}
