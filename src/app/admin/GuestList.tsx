@@ -54,12 +54,13 @@ export default function GuestList({ event, tickets, readOnly }: { event: string;
           className="h-11 w-full rounded-lg border-[1.5px] border-line-strong bg-surface pr-3 pl-10 text-[15px] font-medium focus:border-primary focus:outline-none"
         />
       </label>
-      <fieldset className="flex flex-wrap gap-2">
+      {/* One row; on the narrowest phones (320px) it scrolls sideways instead of wrapping. */}
+      <fieldset className="-m-1 flex min-w-0 gap-1 overflow-x-auto p-1 [scrollbar-width:none] sm:gap-2">
         <legend className="sr-only">Show</legend>
         {FILTERS.map((f) => (
           <label
             key={f.id}
-            className={`flex h-8 items-center rounded-full border px-3 text-[13px] font-semibold transition-colors duration-200 has-focus-visible:outline-3 has-focus-visible:outline-ring ${
+            className={`flex h-8 flex-auto shrink-0 cursor-pointer items-center justify-center rounded-full border px-1.5 text-xs font-semibold whitespace-nowrap sm:flex-none sm:px-3 sm:text-[13px] transition-colors duration-200 has-focus-visible:outline-3 has-focus-visible:outline-ring ${
               filter === f.id ? 'border-primary bg-primary text-primary-ink' : 'border-line-strong bg-surface hover:bg-soft'
             }`}
           >

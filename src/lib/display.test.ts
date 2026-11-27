@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { arrivalBuckets, headline, isGiven, matchTicket, noShows, pickableEvents } from './display'
+import { arrivalBuckets, headline, isGiven, matchTicket, mergeStaff, noShows, pickableEvents } from './display'
 
 test('a named ticket is headed by the name', () => {
   expect(headline({ ticket: '0057', name: 'Juan Dela Cruz' })).toBe('Juan Dela Cruz')
@@ -77,4 +77,9 @@ test('pickableEvents: only open events, plus the one on screen even if closed', 
   const list = [ev('Gala', 'open'), ev('Camp', 'closed'), ev('Retreat', 'open')]
   expect(pickableEvents(list, 'Gala')).toEqual(['Gala', 'Retreat'])
   expect(pickableEvents(list, 'Camp')).toEqual(['Gala', 'Camp', 'Retreat'])
+})
+
+test('the same person typed with different capitals or spaces is one row', () => {
+  expect(mergeStaff([{ name: 'Luwi', count: 15 }, { name: 'Rose', count: 11 }, { name: 'luwi ', count: 6 }, { name: 'ryu', count: 2 }]))
+    .toEqual([{ name: 'Luwi', count: 21 }, { name: 'Rose', count: 11 }, { name: 'ryu', count: 2 }])
 })

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { arrivalCounts, headline } from '@/lib/display'
+import { arrivalCounts, headline, mergeStaff } from '@/lib/display'
 import type { LogEntry, LogResult, Ticket } from '@/lib/types'
 import GuestList from './GuestList'
 
@@ -145,7 +145,7 @@ export default function Desk({ event, tickets, readOnly }: { event: string; tick
               <p className="text-sm text-muted">Nobody has checked anyone in yet.</p>
             ) : (
               <ul className="flex flex-col gap-2">
-                {stats.perStaff.map((s) => (
+                {mergeStaff(stats.perStaff).map((s) => (
                   <li key={s.name} className="flex justify-between gap-3 text-[15px]">
                     <span className="min-w-0 truncate">{s.name || 'Unknown'}</span>
                     <strong className="tabular-nums">{s.count}</strong>
@@ -175,22 +175,23 @@ function Arrivals({ stats, error }: { stats: Pick<Stats, 'total' | 'named' | 'na
       <div role="progressbar" aria-label="Arrived" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} className="h-2.5 overflow-hidden rounded-full bg-soft">
         <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${pct}%` }} />
       </div>
-      <div className="flex flex-wrap gap-x-8 gap-y-1 text-sm text-muted">
+      {/* One row on every width: number over label on phones, inline from sm up. */}
+      <div className="flex gap-3 text-xs leading-tight text-muted sm:gap-8 sm:text-sm">
         {stats.named > 0 && (
-          <span>
-            <strong className="text-ink">{stats.named - stats.namedCheckedIn}</strong> still to arrive
+          <span className="flex flex-1 flex-col sm:block sm:flex-none">
+            <strong className="text-base text-ink sm:text-sm">{stats.named - stats.namedCheckedIn}</strong> still to arrive
           </span>
         )}
         {stats.named > 0 && (
-          <span>
-            <strong className="text-ink">{walkIns}</strong> checked in without a name
+          <span className="flex flex-1 flex-col sm:block sm:flex-none">
+            <strong className="text-base text-ink sm:text-sm">{walkIns}</strong> checked in without a name
           </span>
         )}
-        <span>
-          <strong className="text-ink">{stats.checkedIn}</strong> checked in altogether
+        <span className="flex flex-1 flex-col sm:block sm:flex-none">
+          <strong className="text-base text-ink sm:text-sm">{stats.checkedIn}</strong> checked in altogether
         </span>
-        {error && <span className="text-bad-text">Last update failed. Showing the latest numbers we have.</span>}
       </div>
+      {error && <p className="text-sm text-bad-text">Last update failed. Showing the latest numbers we have.</p>}
     </section>
   )
 }

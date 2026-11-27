@@ -296,7 +296,13 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
   }, [event])
 
   return (
-    <div onPointerDown={unlockAudio} className="mx-auto flex min-h-dvh w-full max-w-md flex-col lg:my-8 lg:min-h-[min(46rem,calc(100dvh-9rem))] lg:rounded-3xl lg:border lg:border-line lg:shadow-[0_24px_60px_-24px_rgb(0_0_0/0.35)]">
+    // While scanning the screen is exactly one viewport tall: the camera takes what's left, so nothing scrolls.
+    <div
+      onPointerDown={unlockAudio}
+      className={`mx-auto flex w-full max-w-md flex-col lg:my-8 lg:rounded-3xl lg:border lg:border-line lg:shadow-[0_24px_60px_-24px_rgb(0_0_0/0.35)] ${
+        event ? 'h-dvh lg:h-[min(46rem,calc(100dvh-9rem))]' : 'min-h-dvh lg:min-h-[min(46rem,calc(100dvh-9rem))]'
+      }`}
+    >
       <header className="flex items-center gap-2.5 border-b border-line bg-surface px-4 pt-4 pb-3 lg:rounded-t-3xl">
         <Select
           label="Event"
@@ -367,7 +373,8 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             </p>
           )}
 
-          <div className={`relative mx-4 overflow-hidden rounded-3xl bg-[#141518] [container-type:size] ${outcome || error || savedOffline !== null ? 'h-64 lg:h-56' : 'h-96 lg:h-80'} transition-[height] duration-300`}>
+          {/* Fills the space left over and keeps that size between scans: the scan box is measured once, when the camera starts. */}
+          <div className="relative mx-4 min-h-44 flex-1 overflow-hidden rounded-3xl bg-[#141518] [container-type:size]">
             {/* The library's own shaded box is hidden; the frame below draws the same area in Q-Pass style. */}
             <div id="reader" className="size-full [&_#qr-shaded-region]:hidden [&_video]:size-full [&_video]:object-cover" />
             {torch && (
@@ -409,34 +416,36 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             </p>
           )}
 
-          <div aria-live="polite" className="mx-4 mt-4">
-            {busy && <p className="rounded-3xl bg-surface p-6 text-lg font-semibold">Checking…</p>}
+          {/* Fixed height, so a result never resizes the camera above it. Cards scroll inside if ever too long. */}
+          <div aria-live="polite" className="mx-4 mt-3 mb-3 h-40 shrink-0 *:h-full *:overflow-y-auto">
+            {!busy && !error && !outcome && savedOffline === null && (
+              <p className="grid place-items-center rounded-2xl border border-dashed border-line-strong text-sm text-muted">The result of each scan shows here.</p>
+            )}
+            {busy && <p className="grid place-items-center rounded-2xl bg-surface text-lg font-semibold">Checking…</p>}
             {!busy && error && (
-              <p role="alert" className="rounded-3xl bg-bad p-6 text-lg font-semibold text-on-flag">
+              <p role="alert" className="rounded-2xl bg-bad p-3 text-base font-semibold text-on-flag">
                 {error}
               </p>
             )}
             {!busy && outcome && <Result outcome={outcome} />}
             {!busy && savedOffline !== null && (
               // Amber, not green: nobody has checked this ticket yet.
-              <section className="flex flex-col gap-1.5 rounded-3xl bg-note p-4 text-note-ink">
-                <span className="flex items-center gap-2.5 text-lg font-bold">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <section className="flex flex-col gap-0.5 rounded-2xl bg-note p-3 text-note-ink">
+                <span className="flex items-center gap-2 text-base font-bold">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 20 0M5 12.9a10 10 0 0 1 14 0M3 3l18 18" />
                   </svg>
                   Saved offline
                 </span>
-                <span className="text-2xl leading-tight font-extrabold wrap-anywhere">
+                <span className="text-xl leading-tight font-extrabold wrap-anywhere">
                   {savedOffline ? `Ticket ${savedOffline}` : 'This ticket'}
                 </span>
-                <span className="text-base leading-relaxed">
+                <span className="text-sm leading-snug">
                   It will be checked when the internet is back. Let them in.
                 </span>
               </section>
             )}
           </div>
-
-          <div className="flex-1" />
 
           <div className="sticky bottom-0 border-t border-line bg-surface p-4 lg:rounded-b-3xl">
             {typing ? (
@@ -501,40 +510,40 @@ const REJECT_TITLE: Record<string, string> = {
 function Result({ outcome }: { outcome: ScanOutcome }) {
   if (outcome.result === 'checked_in')
     return (
-      <section className="flex flex-col gap-1.5 rounded-3xl bg-ok p-4 text-on-flag">
-        <span className="flex items-center gap-2.5 text-lg font-bold">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <section className="flex flex-col gap-0.5 rounded-2xl bg-ok p-3 text-on-flag">
+        <span className="flex items-center gap-2 text-base font-bold">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10" />
             <path d="m8 12 3 3 5-6" />
           </svg>
           Welcome! Checked in
         </span>
         <span className="text-2xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
-        {outcome.name && <span className="text-base text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
+        {outcome.name && <span className="text-sm text-[#d7f0e0]">Ticket {outcome.ticket}</span>}
         {outcome.group && <GroupLine group={outcome.group} />}
       </section>
     )
 
   const used = outcome.result === 'already_checked_in'
   return (
-    <section role="alert" className="flex flex-col gap-1.5 rounded-3xl bg-bad p-4 text-on-flag">
-      <span className="flex items-center gap-2.5 text-lg font-bold">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <section role="alert" className="flex flex-col gap-0.5 rounded-2xl bg-bad p-3 text-on-flag">
+      <span className="flex items-center gap-2 text-base font-bold">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10" />
           <path d="M12 7v6M12 17h.01" />
         </svg>
         {REJECT_TITLE[outcome.result] ?? 'Not checked in'}
       </span>
       {outcome.ticket ? (
-        <span className="text-2xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
+        <span className="text-xl leading-tight font-extrabold wrap-anywhere">{headline(outcome)}</span>
       ) : null}
-      <span className="text-base leading-relaxed text-[#ffe1dd]">
+      <span className="text-sm leading-snug text-[#ffe1dd]">
         {used
           ? `${outcome.name ? `Ticket ${outcome.ticket} was` : 'It was'} checked in at ${fmtTime(outcome.checkedInAt)} by ${outcome.checkedInBy || 'someone'}.`
           : outcome.message}
       </span>
       {outcome.group && <GroupLine group={outcome.group} />}
-      <span className="mt-auto border-t border-white/25 pt-3 text-[15px] leading-relaxed">
+      <span className="mt-auto text-[13px] leading-snug font-semibold">
         Ask for an ID, or call an admin if this looks wrong.
       </span>
     </section>
@@ -544,8 +553,8 @@ function Result({ outcome }: { outcome: ScanOutcome }) {
 /** "2 of 5 in this group are here": the rest of the family is still to come. */
 function GroupLine({ group }: { group: { total: number; here: number } }) {
   return (
-    <span className="mt-1 flex items-center gap-2 rounded-xl bg-white/15 px-3 py-2 text-base font-semibold">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <span className="mt-0.5 flex w-fit items-center gap-1.5 rounded-lg bg-white/15 px-2 text-sm font-semibold">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />

@@ -55,3 +55,18 @@ export const noShows = <T extends { ticket: string; name: string; checkedInAt: s
 /** Events offered in a "switch event" picker: open ones, plus the one on screen (it may be closed). */
 export const pickableEvents = (events: { name: string; status: string }[], current: string): string[] =>
   events.filter((e) => e.status === 'open' || e.name === current).map((e) => e.name)
+
+/** "Luwi" and "luwi " are one person: merge their counts under the spelling with the most check-ins. */
+export function mergeStaff(rows: { name: string; count: number }[]): { name: string; count: number }[] {
+  const byKey = new Map<string, { name: string; count: number; top: number }>()
+  for (const r of rows) {
+    const key = r.name.trim().toLowerCase()
+    const s = byKey.get(key)
+    if (!s) byKey.set(key, { name: r.name.trim(), count: r.count, top: r.count })
+    else {
+      s.count += r.count
+      if (r.count > s.top) Object.assign(s, { name: r.name.trim(), top: r.count })
+    }
+  }
+  return [...byKey.values()].map(({ name, count }) => ({ name, count })).sort((a, b) => b.count - a.count)
+}
