@@ -1,4 +1,5 @@
 import { ensureSchema } from '@/lib/store'
+import InstallButton from '../InstallButton'
 import Logo from '../Logo'
 import SignInForm from './SignInForm'
 import ThemeToggle from '../ThemeToggle'
@@ -40,6 +41,7 @@ export default async function SignIn() {
         <div className="rounded-3xl border border-line bg-surface p-5 shadow-[0_24px_50px_-30px_rgb(0_0_0/0.45)] sm:p-6">
           <SignInForm />
         </div>
+        <InstallButton className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-line-strong bg-surface font-bold transition-colors duration-200 hover:bg-soft" />
       </section>
     </main>
     </>
