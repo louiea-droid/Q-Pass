@@ -421,23 +421,8 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 Keep the video at its own shape, centred: the library reads the scan area as if the video were
                 never cropped, so object-cover or a forced height makes it miss codes in tall boxes. */}
             <div id="reader" className="flex size-full items-center justify-center [&_#qr-shaded-region]:hidden" />
-            {torch && (
-              <button
-                type="button"
-                onClick={toggleTorch}
-                aria-pressed={torchOn}
-                aria-label="Flashlight"
-                className={`absolute top-3 right-3 z-10 grid size-11 place-items-center rounded-full transition-colors duration-200 ${
-                  torchOn ? 'bg-accent text-accent-ink' : 'bg-black/45 text-white hover:bg-black/60'
-                }`}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M18 6c0 2-2 2-2 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10c0-2-2-2-2-4V2h12z" />
-                  <path d="M6 6h12M12 12v2" />
-                </svg>
-              </button>
-            )}
-            {/* Same size as qrbox (80% of the shorter side), with the camera dimmed around it. */}
+            {/* Same size as qrbox (80% of the shorter side), with the camera dimmed around it. Nothing else sits on
+                the camera (hint, flashlight), so nothing can overlap the frame whatever shape the box is. */}
             <div
               aria-hidden="true"
               className={`pointer-events-none absolute inset-0 m-auto size-[80cqmin] rounded-[26px] shadow-[0_0_0_100vmax_rgb(0_0_0/0.45)] transition-opacity duration-300 ${paused ? 'opacity-40' : ''}`}
@@ -447,11 +432,6 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
               </svg>
               {!paused && <span className="absolute inset-x-[10%] top-1/2 h-0.5 animate-scan rounded-full bg-accent shadow-[0_0_12px_2px] shadow-accent/60" />}
             </div>
-            <p className="absolute inset-x-0 bottom-3 flex justify-center">
-              <span className="rounded-full bg-black/55 px-3 py-1 text-sm font-medium text-white">
-                {paused ? (typing ? 'Paused' : `Next scan in ${autoNextIn}s`) : 'Point at the QR code'}
-              </span>
-            </p>
           </div>
 
           {cameraError && (
@@ -460,8 +440,18 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             </p>
           )}
 
-          {/* Fixed height, blank until the first scan, so a result never resizes the camera above it. Cards scroll inside if ever too long. */}
+          {/* Fixed height, so a result never resizes the camera above it. Cards scroll inside if ever too long. */}
           <div aria-live="polite" className="mx-4 mt-3 mb-3 h-44 shrink-0 *:h-full *:overflow-y-auto">
+            {!busy && !error && !outcome && savedOffline === null && (
+              // Tells people where the result will appear, before the first scan and between scans.
+              <div className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-strong px-4 text-center">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-1 text-muted" aria-hidden="true">
+                  <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10" />
+                </svg>
+                <p className="text-base font-bold">The result shows here</p>
+                <p className="text-sm text-muted">Point the camera at the QR code on a ticket.</p>
+              </div>
+            )}
             {busy && <p className="grid place-items-center rounded-2xl bg-surface text-lg font-semibold">Checking…</p>}
             {!busy && error && (
               <p role="alert" className="rounded-2xl bg-bad p-3 text-base font-semibold text-on-flag">
@@ -498,18 +488,39 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                   run({ event, method: 'manual', value: t, at: new Date().toISOString(), by: staff.name })
                 }}
               />
-            ) : paused ? (
-              <div className="flex gap-2.5">
-                <KeypadButton iconOnly onClick={() => setTyping(true)} />
-                <button
-                  onClick={() => resume()}
-                  className="h-10 flex-1 rounded-xl bg-primary text-sm font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover"
-                >
-                  Next person <span className="font-semibold tabular-nums opacity-70">· {autoNextIn}s</span>
-                </button>
-              </div>
             ) : (
-              <KeypadButton onClick={() => setTyping(true)} />
+              <div className="flex gap-2.5">
+                {/* Flashlight: Android Chrome only. Here rather than on the camera, so it never covers the frame. */}
+                {torch && (
+                  <button
+                    type="button"
+                    onClick={toggleTorch}
+                    aria-pressed={torchOn}
+                    aria-label="Flashlight"
+                    className={`grid size-10 shrink-0 place-items-center rounded-xl border transition-colors duration-200 ${
+                      torchOn ? 'border-accent bg-accent text-accent-ink' : 'border-line-strong bg-surface hover:bg-soft'
+                    }`}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M18 6c0 2-2 2-2 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10c0-2-2-2-2-4V2h12z" />
+                      <path d="M6 6h12M12 12v2" />
+                    </svg>
+                  </button>
+                )}
+                {paused ? (
+                  <>
+                    <KeypadButton iconOnly onClick={() => setTyping(true)} />
+                    <button
+                      onClick={() => resume()}
+                      className="h-10 flex-1 rounded-xl bg-primary text-sm font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover"
+                    >
+                      Next person <span className="font-semibold tabular-nums opacity-70">· {autoNextIn}s</span>
+                    </button>
+                  </>
+                ) : (
+                  <KeypadButton onClick={() => setTyping(true)} />
+                )}
+              </div>
             )}
             {staff.role === 'admin' && <TabBar className="mt-3 bg-surface lg:hidden" />}
           </div>
