@@ -583,11 +583,10 @@ function ManualEntry({ disabled, onSubmit, onCancel }: { disabled: boolean; onSu
         autoFocus
         inputMode="numeric"
         autoComplete="off"
-        maxLength={9}
         placeholder="Ticket number"
         value={value}
-        // Digits only: "#57", "No. 57" or a stray space still work.
-        onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))}
+        // Digits only, up to 9: "#57", "No. 57", a stray space or a pasted "Ticket 0057" still work.
+        onChange={(e) => setValue(e.target.value.replace(/\D/g, '').slice(0, 9))}
         className="h-10 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3 text-base font-semibold tabular-nums placeholder:font-normal placeholder:text-muted"
       />
       <button disabled={disabled || !value} className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-primary-ink hover:bg-primary-hover disabled:opacity-50">
