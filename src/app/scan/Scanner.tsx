@@ -300,7 +300,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
     <div
       onPointerDown={unlockAudio}
       className={`mx-auto flex w-full max-w-md flex-col lg:my-8 lg:rounded-3xl lg:border lg:border-line lg:shadow-[0_24px_60px_-24px_rgb(0_0_0/0.35)] ${
-        event ? 'h-dvh lg:h-[min(46rem,calc(100dvh-9rem))]' : 'min-h-dvh lg:min-h-[min(46rem,calc(100dvh-9rem))]'
+        event ? 'h-dvh lg:h-auto lg:min-h-[min(46rem,calc(100dvh-9rem))]' : 'min-h-dvh lg:min-h-[min(46rem,calc(100dvh-9rem))]'
       }`}
     >
       <header className="flex items-center gap-2.5 border-b border-line bg-surface px-4 pt-4 pb-3 lg:rounded-t-3xl">
@@ -416,11 +416,8 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
             </p>
           )}
 
-          {/* Fixed height, so a result never resizes the camera above it. Cards scroll inside if ever too long. */}
+          {/* Fixed height, blank until the first scan, so a result never resizes the camera above it. Cards scroll inside if ever too long. */}
           <div aria-live="polite" className="mx-4 mt-3 mb-3 h-40 shrink-0 *:h-full *:overflow-y-auto">
-            {!busy && !error && !outcome && savedOffline === null && (
-              <p className="grid place-items-center rounded-2xl border border-dashed border-line-strong text-sm text-muted">Results show here.</p>
-            )}
             {busy && <p className="grid place-items-center rounded-2xl bg-surface text-lg font-semibold">Checking…</p>}
             {!busy && error && (
               <p role="alert" className="rounded-2xl bg-bad p-3 text-base font-semibold text-on-flag">
@@ -462,7 +459,7 @@ export default function Scanner({ events, staff, share }: { events: string[]; st
                 <KeypadButton iconOnly onClick={() => setTyping(true)} />
                 <button
                   onClick={resume}
-                  className="h-14 flex-1 rounded-2xl bg-primary text-[17px] font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover"
+                  className="h-11 flex-1 rounded-xl bg-primary text-[15px] font-bold text-primary-ink transition-colors duration-200 hover:bg-primary-hover sm:h-14 sm:rounded-2xl sm:text-[17px]"
                 >
                   Next person
                 </button>
@@ -489,9 +486,9 @@ function KeypadButton({ onClick, iconOnly = false }: { onClick: () => void; icon
     <button
       onClick={onClick}
       aria-label={iconOnly ? 'Type a ticket number' : undefined}
-      className={`flex h-14 items-center justify-center gap-2.5 rounded-2xl border-[1.5px] border-primary bg-surface text-[17px] font-bold text-primary transition-colors duration-200 hover:bg-soft ${iconOnly ? 'w-14 shrink-0' : 'w-full'}`}
+      className={`flex h-11 items-center justify-center gap-2 rounded-xl border-[1.5px] border-primary bg-surface text-[15px] font-bold text-primary transition-colors duration-200 hover:bg-soft sm:h-14 sm:gap-2.5 sm:rounded-2xl sm:text-[17px] ${iconOnly ? 'w-11 shrink-0 sm:w-14' : 'w-full'}`}
     >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <rect x="4" y="2" width="16" height="20" rx="2" />
         <path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h8" />
       </svg>
